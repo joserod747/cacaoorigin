@@ -4,15 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Google Analytics (loads only after cookie consent) -->
+  <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-VXMT2M2H5G"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     gtag('consent', 'default', {
-      'analytics_storage': 'denied'
+      'analytics_storage': 'denied',
+      'wait_for_update': 500
     });
+    gtag('config', 'G-VXMT2M2H5G', {'send_page_view': false});
   </script>
   <title>CacaoOrigin — Ecuador Cacao Broker | CCN-51 & Fine Aroma Cacao Supplier</title>
   <meta name="description" content="CacaoOrigin connects international buyers with premium Ecuador cacao. Specialists in CCN-51 and Fine Aroma cacao sourcing, FOB Guayaquil. Transparent, reliable cacao brokerage for European and global markets.">
@@ -425,7 +427,7 @@
     localStorage.setItem('cookieChoice', 'accepted');
     document.getElementById('cookieBanner').classList.remove('visible');
     gtag('consent', 'update', {'analytics_storage': 'granted'});
-    gtag('config', 'G-VXMT2M2H5G');
+    gtag('event', 'page_view');
   }
   function rejectCookies() {
     localStorage.setItem('cookieChoice', 'rejected');
@@ -447,5 +449,7 @@
   }
 </script>
 
+</body>
+</html>
 </body>
 </html>
