@@ -3,8 +3,62 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CacaoOrigin — Intermediación de Cacao de Origen</title>
-  <meta name="description" content="Conectamos los mejores cacaos de origen con compradores internacionales. Transparencia, calidad y confianza.">
+
+  <!-- Google Analytics (loads only after cookie consent) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-VXMT2M2H5G"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('consent', 'default', {
+      'analytics_storage': 'denied'
+    });
+  </script>
+  <title>CacaoOrigin — Ecuador Cacao Broker | CCN-51 & Fine Aroma Cacao Supplier</title>
+  <meta name="description" content="CacaoOrigin connects international buyers with premium Ecuador cacao. Specialists in CCN-51 and Fine Aroma cacao sourcing, FOB Guayaquil. Transparent, reliable cacao brokerage for European and global markets.">
+  <meta name="keywords" content="cacao Ecuador, cocoa beans Ecuador, CCN-51 cacao, fine aroma cacao, cacao broker, cocoa supplier Ecuador, buy cacao Ecuador, cacao exportador Ecuador, intermediacion cacao, cacao FOB Guayaquil, Ecuador cocoa export, cacao origin, wholesale cocoa beans, cacao CCN51 supplier">
+  <meta name="author" content="CacaoOrigin - The Benedict SAS">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://cacaoorigin.com">
+
+  <!-- Open Graph (WhatsApp, LinkedIn, Facebook) -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://cacaoorigin.com">
+  <meta property="og:title" content="CacaoOrigin — Ecuador Cacao Broker | CCN-51 & Fine Aroma">
+  <meta property="og:description" content="Connecting international buyers with premium Ecuador cacao. CCN-51 and Fine Aroma specialists. FOB Guayaquil. Transparent and reliable brokerage.">
+  <meta property="og:image" content="https://cacaoorigin.com/logo.png">
+  <meta property="og:locale" content="es_ES">
+  <meta property="og:locale:alternate" content="en_GB">
+  <meta property="og:site_name" content="CacaoOrigin">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="CacaoOrigin — Ecuador Cacao Broker">
+  <meta name="twitter:description" content="Connecting international buyers with premium Ecuador cacao. CCN-51 and Fine Aroma specialists.">
+  <meta name="twitter:image" content="https://cacaoorigin.com/logo.png">
+
+  <!-- Structured Data (Google Rich Results) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "CacaoOrigin",
+    "legalName": "The Benedict SAS",
+    "url": "https://cacaoorigin.com",
+    "logo": "https://cacaoorigin.com/logo.png",
+    "description": "Ecuador cacao brokerage specializing in CCN-51 and Fine Aroma cacao. FOB Guayaquil. Connecting origin producers with international buyers.",
+    "foundingLocation": "Ecuador",
+    "areaServed": ["EC", "ES", "EU", "US", "GB"],
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "telephone": "+593994667155",
+      "contactType": "sales",
+      "email": "info@cacaoorigin.com",
+      "availableLanguage": ["Spanish", "English"]
+    },
+    "sameAs": []
+  }
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
@@ -359,17 +413,24 @@
 
   // Cookie banner
   window.addEventListener('load', () => {
-    if(!localStorage.getItem('cookieChoice')) {
+    const choice = localStorage.getItem('cookieChoice');
+    if(!choice) {
       setTimeout(() => document.getElementById('cookieBanner').classList.add('visible'), 800);
+    } else if(choice === 'accepted') {
+      gtag('consent', 'update', {'analytics_storage': 'granted'});
+      gtag('config', 'G-VXMT2M2H5G');
     }
   });
   function acceptCookies() {
     localStorage.setItem('cookieChoice', 'accepted');
     document.getElementById('cookieBanner').classList.remove('visible');
+    gtag('consent', 'update', {'analytics_storage': 'granted'});
+    gtag('config', 'G-VXMT2M2H5G');
   }
   function rejectCookies() {
     localStorage.setItem('cookieChoice', 'rejected');
     document.getElementById('cookieBanner').classList.remove('visible');
+    gtag('consent', 'update', {'analytics_storage': 'denied'});
   }
 
   // Privacy modal
