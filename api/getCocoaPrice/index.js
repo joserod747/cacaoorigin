@@ -1,6 +1,8 @@
+const fetch = require('node-fetch');
+
 module.exports = async function (context, req) {
   const apiKey = process.env.COMMODITY_API_KEY;
-  
+
   try {
     const response = await fetch(
       'https://api.commoditypriceapi.com/v2/latest?symbols=CC',
@@ -11,7 +13,6 @@ module.exports = async function (context, req) {
 
     context.res = {
       status: 200,
-      isRaw: false,
       body: {
         success: price !== null,
         price: price,
