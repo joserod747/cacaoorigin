@@ -11,21 +11,21 @@ module.exports = async function (context, req) {
 
     context.res = {
       status: 200,
-      body: JSON.stringify({
+      isRaw: false,
+      body: {
         success: price !== null,
         price: price,
         timestamp: new Date().toISOString()
-      }),
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
       }
     };
   } catch (err) {
     context.res = {
       status: 200,
-      body: JSON.stringify({ success: false, price: null, error: err.message }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      body: {
+        success: false,
+        price: null,
+        error: err.message
+      }
     };
   }
 };
