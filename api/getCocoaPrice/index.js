@@ -5,16 +5,17 @@ module.exports = async function (context, req) {
 
   try {
     const response = await fetch(
-      'https://api.commoditypriceapi.com/v2/latest?symbols=CC',
+      'https://api.commoditypriceapi.com/v2/rates/latest?symbols=CC',
       { headers: { 'x-api-key': apiKey } }
     );
     const data = await response.json();
+    const price = data?.rates?.CC || null;
 
     context.res = {
       status: 200,
       body: {
-        success: data?.data?.CC?.price ? true : false,
-        price: data?.data?.CC?.price || null,
+        success: price !== null,
+        price: price,
         raw: data,
         timestamp: new Date().toISOString()
       }
@@ -25,8 +26,7 @@ module.exports = async function (context, req) {
       body: {
         success: false,
         price: null,
-        error: err.message,
-        stack: err.stack
+        error: err.message
       }
     };
   }
