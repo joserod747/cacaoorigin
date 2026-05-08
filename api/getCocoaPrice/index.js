@@ -1,5 +1,4 @@
 const { app } = require('@azure/functions');
-const fetch = require('node-fetch');
 
 app.http('getCocoaPrice', {
   methods: ['GET'],
@@ -9,9 +8,16 @@ app.http('getCocoaPrice', {
     try {
       const apiKey = process.env.COMMODITY_API_KEY;
       const response = await fetch(
-        `https://api.commoditypriceapi.com/v2/latest?symbols=COCOA&api_key=${apiKey}`
+        'https://api.commoditypriceapi.com/v2/latest?symbols=CC',
+        {
+          headers: {
+            'x-api-key': apiKey
+          }
+        }
       );
       const data = await response.json();
+      context.log('API response:', JSON.stringify(data));
+
       if (data && data.data && data.data.CC) {
         return {
           status: 200,
@@ -29,7 +35,7 @@ app.http('getCocoaPrice', {
       return {
         status: 200,
         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-        body: JSON.stringify({ success: false, price: null })
+        body: JSON.stringify({ success: false, price: null, raw: data })
       };
     } catch (error) {
       return {
