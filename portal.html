@@ -230,6 +230,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11a2 2 0 012 2v3m-3 9H8a2 2 0 00-2 2v0a2 2 0 002 2h8a2 2 0 002-2v0a2 2 0 00-2-2zm5-9H11a2 2 0 00-2 2v7a2 2 0 002 2h8a2 2 0 002-2v-7a2 2 0 00-2-2z"/></svg>
         Pedidos
       </div>
+      <div class="nav-item" onclick="showPage('mercado')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Mercado
+      </div>
     </nav>
     <div class="sidebar-user">
       <strong id="userEmail">usuario@cacaoorigin.com</strong>
@@ -509,6 +513,61 @@
     </div>
 
   </div><!-- end main -->
+    <!-- MERCADO -->
+    <div id="page-mercado" class="page">
+      <div class="topbar">
+        <h1>Mercado — Histórico de Precios</h1>
+        <button class="btn btn-dark" onclick="recordPrice()">+ Registrar precio actual</button>
+      </div>
+
+      <!-- Stats cards -->
+      <div class="cards" style="grid-template-columns:repeat(4,1fr);">
+        <div class="card accent">
+          <div class="card-label">Precio actual ICE NY</div>
+          <div class="card-value" id="mCurrentPrice">—</div>
+          <div class="card-sub">USD/MT</div>
+        </div>
+        <div class="card green">
+          <div class="card-label">Promedio mensual</div>
+          <div class="card-value" id="mMonthAvg">—</div>
+          <div class="card-sub">USD/MT</div>
+        </div>
+        <div class="card blue">
+          <div class="card-label">Mínimo del mes</div>
+          <div class="card-value" id="mMonthMin">—</div>
+          <div class="card-sub">USD/MT</div>
+        </div>
+        <div class="card orange">
+          <div class="card-label">Máximo del mes</div>
+          <div class="card-value" id="mMonthMax">—</div>
+          <div class="card-sub">USD/MT</div>
+        </div>
+      </div>
+
+      <!-- Monthly averages -->
+      <div class="section" style="margin-bottom:1.5rem;">
+        <div class="section-header">
+          <span class="section-title">Promedios mensuales</span>
+        </div>
+        <table>
+          <thead><tr><th>Mes</th><th>Promedio USD/MT</th><th>Mínimo</th><th>Máximo</th><th>Registros</th></tr></thead>
+          <tbody id="monthlyAvgBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Price history -->
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">Histórico completo</span>
+          <button class="btn btn-outline btn-sm" onclick="clearPriceHistory()" style="color:var(--red);">Limpiar histórico</button>
+        </div>
+        <table>
+          <thead><tr><th>Fecha</th><th>Hora</th><th>Precio ICE NY</th><th>Fuente</th><th>Nota</th></tr></thead>
+          <tbody id="priceHistoryBody"></tbody>
+        </table>
+      </div>
+    </div>
+
 </div><!-- end portal -->
 
 <!-- MODALS -->
@@ -794,6 +853,7 @@ function showPortal(user) {
   document.getElementById('dashDate').textContent = new Date().toLocaleDateString('es-ES', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
   fetchCocoaPrice();
   updateDashboard();
+  renderPriceHistory();
   renderLeads();
   renderSuppliers();
   renderQuotes();
@@ -841,6 +901,7 @@ async function fetchCocoaPrice() {
       state.icePrice = data.price;
       saveState();
       updatePriceTicker(data.price, null);
+      recordPrice(false);
     } else {
       updatePriceTicker(state.icePrice, null);
     }
@@ -1311,6 +1372,107 @@ window.addEventListener('load', () => {
   // Refresh price every 10 min
   setInterval(fetchCocoaPrice, 600000);
 });
+
+// ─── PRICE HISTORY ────────────────────────────────────────────────────────────
+function recordPrice(manual = false) {
+  if (!state.icePrice) { alert('No hay precio disponible'); return; }
+  const record = {
+    id: Date.now(),
+    date: new Date().toISOString().split('T')[0],
+    time: new Date().toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'}),
+    price: state.icePrice,
+    source: manual ? 'Manual' : 'API',
+    note: ''
+  };
+  const history = JSON.parse(localStorage.getItem('co_price_history') || '[]');
+  // Only record once per day automatically
+  const today = record.date;
+  const alreadyToday = history.find(r => r.date === today && r.source === 'API');
+  if (!manual && alreadyToday) return;
+  history.unshift(record);
+  localStorage.setItem('co_price_history', JSON.stringify(history));
+  renderPriceHistory();
+}
+
+function renderPriceHistory() {
+  const history = JSON.parse(localStorage.getItem('co_price_history') || '[]');
+  
+  // Update current price
+  if (state.icePrice) {
+    document.getElementById('mCurrentPrice').textContent = '$' + state.icePrice.toLocaleString();
+  }
+
+  // Calculate monthly stats
+  const now = new Date();
+  const thisMonth = now.toISOString().slice(0, 7);
+  const thisMonthRecords = history.filter(r => r.date.startsWith(thisMonth));
+  
+  if (thisMonthRecords.length) {
+    const prices = thisMonthRecords.map(r => r.price);
+    const avg = Math.round(prices.reduce((a,b) => a+b, 0) / prices.length);
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+    document.getElementById('mMonthAvg').textContent = '$' + avg.toLocaleString();
+    document.getElementById('mMonthMin').textContent = '$' + min.toLocaleString();
+    document.getElementById('mMonthMax').textContent = '$' + max.toLocaleString();
+  }
+
+  // Monthly averages table
+  const months = {};
+  history.forEach(r => {
+    const m = r.date.slice(0, 7);
+    if (!months[m]) months[m] = [];
+    months[m].push(r.price);
+  });
+
+  const monthlyBody = document.getElementById('monthlyAvgBody');
+  if (monthlyBody) {
+    const monthKeys = Object.keys(months).sort().reverse();
+    if (!monthKeys.length) {
+      monthlyBody.innerHTML = '<tr><td colspan="5" class="empty-state">No hay datos aún.</td></tr>';
+    } else {
+      monthlyBody.innerHTML = monthKeys.map(m => {
+        const prices = months[m];
+        const avg = Math.round(prices.reduce((a,b) => a+b,0) / prices.length);
+        const min = Math.min(...prices);
+        const max = Math.max(...prices);
+        const [year, month] = m.split('-');
+        const monthName = new Date(year, month-1).toLocaleString('es-ES', {month:'long', year:'numeric'});
+        return `<tr>
+          <td>${monthName}</td>
+          <td><strong>$${avg.toLocaleString()}</strong></td>
+          <td>$${min.toLocaleString()}</td>
+          <td>$${max.toLocaleString()}</td>
+          <td>${prices.length}</td>
+        </tr>`;
+      }).join('');
+    }
+  }
+
+  // Full history table
+  const historyBody = document.getElementById('priceHistoryBody');
+  if (historyBody) {
+    if (!history.length) {
+      historyBody.innerHTML = '<tr><td colspan="5" class="empty-state">No hay registros.</td></tr>';
+    } else {
+      historyBody.innerHTML = history.map(r => `
+        <tr>
+          <td>${r.date}</td>
+          <td>${r.time}</td>
+          <td><strong>$${r.price.toLocaleString()} USD/MT</strong></td>
+          <td><span class="badge ${r.source === 'API' ? 'badge-activo' : 'badge-cotizado'}">${r.source}</span></td>
+          <td>${r.note || '—'}</td>
+        </tr>
+      `).join('');
+    }
+  }
+}
+
+function clearPriceHistory() {
+  if (!confirm('¿Eliminar todo el histórico de precios?')) return;
+  localStorage.removeItem('co_price_history');
+  renderPriceHistory();
+}
 </script>
 </body>
 </html>
