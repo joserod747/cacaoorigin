@@ -9,13 +9,13 @@ module.exports = async function (context, req) {
       { headers: { 'x-api-key': apiKey } }
     );
     const data = await response.json();
-    const price = data?.data?.CC?.price || null;
 
     context.res = {
       status: 200,
       body: {
-        success: price !== null,
-        price: price,
+        success: data?.data?.CC?.price ? true : false,
+        price: data?.data?.CC?.price || null,
+        raw: data,
         timestamp: new Date().toISOString()
       }
     };
@@ -25,7 +25,8 @@ module.exports = async function (context, req) {
       body: {
         success: false,
         price: null,
-        error: err.message
+        error: err.message,
+        stack: err.stack
       }
     };
   }
