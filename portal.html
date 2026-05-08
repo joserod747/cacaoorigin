@@ -26,7 +26,7 @@
     .ms-btn svg{width:20px;height:20px;}
 
     /* PORTAL */
-    #portal{display:none;min-height:100vh;display:none;}
+    #portal{display:none;min-height:100vh;}
     .sidebar{width:220px;background:var(--dark);min-height:100vh;position:fixed;top:0;left:0;display:flex;flex-direction:column;z-index:100;}
     .sidebar-logo{padding:1.5rem;border-bottom:0.5px solid #3d3830;}
     .sidebar-logo img{height:44px;}
@@ -37,7 +37,7 @@
     .sidebar-user{padding:1rem 1.5rem;border-top:0.5px solid #3d3830;font-size:12px;color:#8a8070;}
     .sidebar-user strong{display:block;color:var(--cream);margin-bottom:2px;}
 
-    .main{margin-left:220px;padding:2rem;box-sizing:border-box;width:calc(100vw - 220px);overflow-x:hidden;}
+    .main{margin-left:220px;padding:2rem;}
     .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;}
     .topbar h1{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;}
     .btn{padding:10px 24px;font-family:'Jost',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;border:none;cursor:pointer;transition:all .2s;}
@@ -50,7 +50,7 @@
     .btn-sm{padding:6px 14px;font-size:11px;}
 
     /* CARDS */
-    .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem;width:100%;}
+    .cards{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;margin-bottom:2rem;}
     .card{background:white;padding:1.5rem;border-left:3px solid var(--border);}
     .card.accent{border-left-color:var(--accent);}
     .card.green{border-left-color:var(--green);}
@@ -203,7 +203,7 @@
 <div id="portal">
   <div class="sidebar">
     <div class="sidebar-logo">
-      <img src="logo.png" alt="CacaoOrigin" onerror="this.style.filter='brightness(0) invert(1)'">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--cream);letter-spacing:1px;">Cacao<span style="color:var(--accent)">Origin</span></div>
     </div>
     <nav class="sidebar-nav">
       <div class="nav-item active" onclick="showPage('dashboard')">
@@ -521,7 +521,7 @@
       </div>
 
       <!-- Stats cards -->
-      <div class="cards" style="grid-template-columns:repeat(2,1fr);">
+      <div class="cards">
         <div class="card accent">
           <div class="card-label">Precio actual ICE NY</div>
           <div class="card-value" id="mCurrentPrice">—</div>
