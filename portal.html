@@ -13,7 +13,7 @@
       --light:#f0ebe0;--border:#d4c9a8;--green:#2d6a4f;--red:#c0392b;
       --blue:#1a5276;--orange:#d35400;
     }
-    body{font-family:'Jost',sans-serif;background:#f5f5f5;color:var(--dark);}
+    body{font-family:'Jost',sans-serif;background:#f5f5f5;color:var(--dark);overflow-x:hidden;}html{overflow-x:hidden;}
 
     /* LOGIN */
     #loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--dark);}
@@ -27,7 +27,7 @@
 
     /* PORTAL */
     #portal{display:none;min-height:100vh;}
-    .sidebar{width:220px;background:var(--dark);min-height:100vh;position:fixed;top:0;left:0;display:flex;flex-direction:column;}
+    .sidebar{width:220px;background:var(--dark);min-height:100vh;position:fixed;top:0;left:0;display:flex;flex-direction:column;z-index:100;}
     .sidebar-logo{padding:1.5rem;border-bottom:0.5px solid #3d3830;}
     .sidebar-logo img{height:44px;}
     .sidebar-nav{flex:1;padding:1rem 0;}
@@ -37,7 +37,7 @@
     .sidebar-user{padding:1rem 1.5rem;border-top:0.5px solid #3d3830;font-size:12px;color:#8a8070;}
     .sidebar-user strong{display:block;color:var(--cream);margin-bottom:2px;}
 
-    .main{margin-left:220px;padding:2rem;width:calc(100% - 220px);box-sizing:border-box;}
+    .main{position:absolute;left:220px;right:0;padding:2rem;box-sizing:border-box;}
     .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;}
     .topbar h1{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;}
     .btn{padding:10px 24px;font-family:'Jost',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;border:none;cursor:pointer;transition:all .2s;}
@@ -521,7 +521,7 @@
       </div>
 
       <!-- Stats cards -->
-      <div class="cards" style="grid-template-columns:repeat(4,1fr);max-width:100%;box-sizing:border-box;">
+      <div class="cards" style="grid-template-columns:repeat(2,1fr);">
         <div class="card accent">
           <div class="card-label">Precio actual ICE NY</div>
           <div class="card-value" id="mCurrentPrice">—</div>
