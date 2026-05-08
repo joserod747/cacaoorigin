@@ -12,7 +12,7 @@ app.http('getCocoaPrice', {
         `https://api.commoditypriceapi.com/v2/latest?symbols=COCOA&api_key=${apiKey}`
       );
       const data = await response.json();
-      if (data && data.data && data.data.COCOA) {
+      if (data && data.data && data.data.CC) {
         return {
           status: 200,
           headers: {
@@ -21,7 +21,7 @@ app.http('getCocoaPrice', {
           },
           body: JSON.stringify({
             success: true,
-            price: data.data.COCOA.price,
+            price: data.data.CC.price,
             timestamp: new Date().toISOString()
           })
         };
