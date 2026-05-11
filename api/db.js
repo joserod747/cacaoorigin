@@ -1,12 +1,17 @@
 const { CosmosClient } = require('@azure/cosmos');
 
-const client = new CosmosClient(process.env.COSMOS_CONNECTION);
+let client;
+function getClient() {
+  if (!client) {
+    client = new CosmosClient(process.env.COSMOS_CONNECTION);
+  }
+  return client;
+}
+
 const DB_NAME = 'cacaoorigin';
 
-const CONTAINERS = ['leads', 'suppliers', 'quotes', 'supplierQuotes', 'orders', 'priceHistory'];
-
 async function getContainer(name) {
-  const { database } = await client.databases.createIfNotExists({ id: DB_NAME });
+  const { database } = await getClient().databases.createIfNotExists({ id: DB_NAME });
   const { container } = await database.containers.createIfNotExists({
     id: name,
     partitionKey: { paths: ['/id'] }
