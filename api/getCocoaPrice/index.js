@@ -1,5 +1,4 @@
 const fetch = require('node-fetch');
-const { upsert } = require('../db');
 
 const CORS = {
   'Content-Type': 'application/json',
@@ -21,18 +20,6 @@ module.exports = async function (context, req) {
     );
     const data = await response.json();
     const price = data?.rates?.CC || null;
-
-    if (price) {
-      // Auto-save to price history in Cosmos DB
-      await upsert('priceHistory', {
-        id: String(Date.now()),
-        date: new Date().toISOString().split('T')[0],
-        time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-        price: price,
-        source: 'API',
-        timestamp: Date.now()
-      });
-    }
 
     context.res = {
       status: 200,
