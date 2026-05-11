@@ -3,10 +3,11 @@ const { CosmosClient } = require('@azure/cosmos');
 let client;
 function getClient() {
   if (!client) {
-    client = new CosmosClient({
-      endpoint: process.env.COSMOS_ENDPOINT,
-      key: process.env.COSMOS_KEY
-    });
+    const endpoint = process.env.COSMOS_ENDPOINT;
+    const key = process.env.COSMOS_KEY;
+    console.log('COSMOS_ENDPOINT:', endpoint ? endpoint.substring(0, 40) : 'MISSING');
+    console.log('COSMOS_KEY:', key ? 'present (' + key.length + ' chars)' : 'MISSING');
+    client = new CosmosClient({ endpoint, key });
   }
   return client;
 }
