@@ -844,22 +844,44 @@ const SCOPES = 'openid profile email User.Read Mail.Send';
 const st = {
   user: null, token: null, editingId: null, currentFile: null,
   icePrice: parseFloat(localStorage.getItem('co_ice') || '0'),
-  leads: JSON.parse(localStorage.getItem('co_leads') || '[]'),
-  suppliers: JSON.parse(localStorage.getItem('co_suppliers') || '[]'),
-  quotes: JSON.parse(localStorage.getItem('co_quotes') || '[]'),
-  supplierQuotes: JSON.parse(localStorage.getItem('co_sq') || '[]'),
-  orders: JSON.parse(localStorage.getItem('co_orders') || '[]'),
-  priceHistory: JSON.parse(localStorage.getItem('co_ph') || '[]')
+  leads: [], suppliers: [], quotes: [], supplierQuotes: [], orders: [], priceHistory: []
 };
 
 function save() {
-  localStorage.setItem('co_leads', JSON.stringify(st.leads));
-  localStorage.setItem('co_suppliers', JSON.stringify(st.suppliers));
-  localStorage.setItem('co_quotes', JSON.stringify(st.quotes));
-  localStorage.setItem('co_sq', JSON.stringify(st.supplierQuotes));
-  localStorage.setItem('co_orders', JSON.stringify(st.orders));
-  localStorage.setItem('co_ph', JSON.stringify(st.priceHistory));
+  // Data is saved directly to Cosmos DB via API
   localStorage.setItem('co_ice', st.icePrice);
+}
+
+async function dbGet(collection) {
+  try {
+    const res = await fetch(`${API_BASE}/data/${collection}`, {
+      headers: { Authorization: `Bearer ${st.token}` }
+    });
+    const data = await res.json();
+    return data.success ? data.data : [];
+  } catch(e) { return []; }
+}
+
+async function dbSave(collection, item) {
+  try {
+    item.id = item.id ? String(item.id) : String(Date.now());
+    const res = await fetch(`${API_BASE}/data/${collection}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${st.token}` },
+      body: JSON.stringify(item)
+    });
+    const data = await res.json();
+    return data.success ? data.data : null;
+  } catch(e) { return null; }
+}
+
+async function dbDelete(collection, id) {
+  try {
+    await fetch(`${API_BASE}/data/${collection}/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${st.token}` }
+    });
+  } catch(e) {}
 }
 
 // ─── AUTH ─────────────────────────────────────────────────────────────────────
@@ -893,12 +915,19 @@ async function loadUser(token) {
   } catch(e) { console.error(e); }
 }
 
-function showPortal() {
+async function showPortal() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('portal').style.display = 'block';
   document.getElementById('userEmail').textContent = st.user.mail || st.user.userPrincipalName || '—';
   document.getElementById('userName').textContent = st.user.displayName || '';
   document.getElementById('dashDate').textContent = new Date().toLocaleDateString('es-ES', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  // Load all data from Cosmos DB
+  const [leads, suppliers, quotes, sq, orders, ph] = await Promise.all([
+    dbGet('leads'), dbGet('suppliers'), dbGet('quotes'),
+    dbGet('supplierQuotes'), dbGet('orders'), dbGet('priceHistory')
+  ]);
+  st.leads = leads; st.suppliers = suppliers; st.quotes = quotes;
+  st.supplierQuotes = sq; st.orders = orders; st.priceHistory = ph;
   fetchPrice();
   renderAll();
   setInterval(fetchPrice, 600000);
@@ -970,19 +999,20 @@ function loadLivePrice() {
 }
 
 // ─── PRICE HISTORY ────────────────────────────────────────────────────────────
-function recordPrice(manual) {
+async function recordPrice(manual) {
   if (!st.icePrice) return;
   const today = new Date().toISOString().split('T')[0];
   if (!manual) {
     const alreadyToday = st.priceHistory.find(r => r.date === today && r.source === 'API');
     if (alreadyToday) return;
   }
-  st.priceHistory.unshift({
-    id: Date.now(), date: today,
+  const record = {
+    id: String(Date.now()), date: today,
     time: new Date().toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'}),
     price: st.icePrice, source: manual ? 'Manual' : 'API'
-  });
-  save();
+  };
+  st.priceHistory.unshift(record);
+  await dbSave('priceHistory', record);
   if (document.getElementById('page-mercado').classList.contains('active')) renderPriceHistory();
   addActivity('Precio ICE NY registrado: $' + st.icePrice.toLocaleString() + ' USD/MT');
 }
@@ -1019,9 +1049,11 @@ function renderPriceHistory() {
     </tr>`).join('') : '<tr><td colspan="4" class="empty">Sin registros.</td></tr>';
 }
 
-function clearPriceHistory() {
+async function clearPriceHistory() {
   if (!confirm('¿Eliminar todo el histórico de precios?')) return;
-  st.priceHistory = []; save(); renderPriceHistory();
+  // Delete all price history - reload from DB after
+  for (const r of st.priceHistory) { await dbDelete('priceHistory', r.id); }
+  st.priceHistory = []; renderPriceHistory();
 }
 
 // ─── QUOTER ───────────────────────────────────────────────────────────────────
@@ -1040,7 +1072,7 @@ function calcQuote() {
   document.getElementById('r-profit').textContent = (margin && vol) ? `$${(margin*vol).toLocaleString()} USD` : '—';
 }
 
-function saveQuote() {
+async function saveQuote() {
   const ice = parseFloat(document.getElementById('qIce').value);
   const vol = parseFloat(document.getElementById('qVol').value);
   if (!ice || !vol) { alert('Ingresa precio ICE y volumen'); return; }
@@ -1057,7 +1089,9 @@ function saveQuote() {
     incoterm: document.getElementById('qInco').value,
     notes: document.getElementById('qNotes').value, status: 'Borrador'
   };
-  st.quotes.unshift(q); save(); renderQuotes();
+  await dbSave('quotes', q);
+  const quotes = await dbGet('quotes'); st.quotes = quotes;
+  renderQuotes();
   addActivity(`Cotización guardada — $${sell.toFixed(0)}/MT × ${vol} MT`);
   alert('✅ Cotización guardada');
 }
@@ -1093,7 +1127,7 @@ async function sendEmail() {
 }
 
 // ─── LEADS ────────────────────────────────────────────────────────────────────
-function saveLead() {
+async function saveLead() {
   const company = document.getElementById('lCompany').value.trim();
   if (!company) { alert('Ingresa el nombre de la empresa'); return; }
   const lead = {
@@ -1114,7 +1148,10 @@ function saveLead() {
   } else {
     st.leads.unshift(lead);
   }
-  st.editingId = null; save(); renderLeads(); populateClientSelects();
+  st.editingId = null;
+  await dbSave('leads', lead);
+  const leads = await dbGet('leads'); st.leads = leads;
+  renderLeads(); populateClientSelects();
   updateKPIs(); addActivity(`Lead: ${company}`); closeModal('modalLead');
 }
 
@@ -1149,10 +1186,11 @@ function editLead(id) {
   openModal('modalLead');
 }
 
-function deleteLead(id) {
+async function deleteLead(id) {
   if (!confirm('¿Eliminar este lead?')) return;
+  await dbDelete('leads', id);
   st.leads = st.leads.filter(l => l.id !== id);
-  save(); renderLeads(); updateKPIs();
+  renderLeads(); updateKPIs();
 }
 
 function filterLeads(q) {
@@ -1184,7 +1222,7 @@ function renderPipeline() {
 }
 
 // ─── SUPPLIERS ────────────────────────────────────────────────────────────────
-function saveSupplier() {
+async function saveSupplier() {
   const company = document.getElementById('pCompany').value.trim();
   if (!company) { alert('Ingresa nombre de empresa'); return; }
   const s = {
@@ -1198,7 +1236,9 @@ function saveSupplier() {
     status: document.getElementById('pStatus').value,
     notes: document.getElementById('pNotes').value
   };
-  st.suppliers.unshift(s); save(); renderSuppliers(); updateKPIs();
+  await dbSave('suppliers', s);
+  const suppliers = await dbGet('suppliers'); st.suppliers = suppliers;
+  renderSuppliers(); updateKPIs();
   addActivity(`Proveedor: ${company}`); closeModal('modalSupplier');
 }
 
@@ -1216,10 +1256,11 @@ function renderSuppliers() {
     </tr>`).join('') : '<tr><td colspan="7" class="empty">No hay proveedores.</td></tr>';
 }
 
-function deleteSupplier(id) {
+async function deleteSupplier(id) {
   if (!confirm('¿Eliminar proveedor?')) return;
+  await dbDelete('suppliers', id);
   st.suppliers = st.suppliers.filter(s => s.id !== id);
-  save(); renderSuppliers(); updateKPIs();
+  renderSuppliers(); updateKPIs();
 }
 
 function populateSupplierSelects() {
@@ -1234,7 +1275,7 @@ function handleFile(input) {
   }
 }
 
-function saveSupplierQuote() {
+async function saveSupplierQuote() {
   const suppEl = document.getElementById('sqSupplier');
   const supp = st.suppliers.find(s => s.id == suppEl.value);
   const sq = {
@@ -1247,7 +1288,8 @@ function saveSupplierQuote() {
     validUntil: document.getElementById('sqValid').value,
     fileName: st.currentFile ? st.currentFile.name : null
   };
-  st.supplierQuotes.unshift(sq); st.currentFile = null; save();
+  await dbSave('supplierQuotes', sq); st.currentFile = null;
+  const sqs = await dbGet('supplierQuotes'); st.supplierQuotes = sqs;
   renderSupplierQuotes(); renderSupplierQuotes2();
   addActivity(`Cotización proveedor: ${sq.supplierName}`); closeModal('modalSupplierQuote');
 }
@@ -1295,7 +1337,7 @@ function resendQuote(id) {
 }
 
 // ─── ORDERS ───────────────────────────────────────────────────────────────────
-function saveOrder() {
+async function saveOrder() {
   const cl = document.getElementById('ordClient');
   const sp = document.getElementById('ordSupplier');
   const order = {
@@ -1310,7 +1352,9 @@ function saveOrder() {
     bl: document.getElementById('ordBL').value,
     notes: document.getElementById('ordNotes').value
   };
-  st.orders.unshift(order); save(); renderOrders(); updateKPIs();
+  await dbSave('orders', order);
+  const orders = await dbGet('orders'); st.orders = orders;
+  renderOrders(); updateKPIs();
   addActivity(`Pedido: ${order.client} ${order.volume} MT`); closeModal('modalOrder');
 }
 
@@ -1332,9 +1376,9 @@ function renderOrders() {
     </tr>`).join('') : '<tr><td colspan="9" class="empty">No hay pedidos.</td></tr>';
 }
 
-function updateOrder(id, status) {
+async function updateOrder(id, status) {
   const o = st.orders.find(x => x.id === id);
-  if (o) { o.status = status; save(); renderOrders(); addActivity(`Pedido actualizado: ${o.client} → ${status}`); }
+  if (o) { o.status = status; await dbSave('orders', o); renderOrders(); addActivity(`Pedido actualizado: ${o.client} → ${status}`); }
 }
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
