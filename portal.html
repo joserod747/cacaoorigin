@@ -936,8 +936,8 @@ async function showPortal() {
   ]);
   st.leads = leads; st.suppliers = suppliers; st.quotes = quotes;
   st.supplierQuotes = sq; st.orders = orders; st.priceHistory = ph;
-  fetchPrice();
   renderAll();
+  await fetchPrice();
   setInterval(fetchPrice, 600000);
 }
 
@@ -977,12 +977,19 @@ async function fetchPrice() {
     const res = await fetch(`${API_BASE}/cocoa-price`);
     const data = await res.json();
     if (data.success && data.price) {
-      st.icePrice = data.price;
+      st.icePrice = parseFloat(data.price);
       save();
-      updateTicker(data.price);
+      updateTicker(st.icePrice);
       await recordPrice(false);
+      // Reload price history from DB after recording
+      st.priceHistory = await dbGet('priceHistory');
+      renderPriceHistory();
+    } else if (st.icePrice) {
+      updateTicker(st.icePrice);
     }
-  } catch(e) { updateTicker(st.icePrice); }
+  } catch(e) { 
+    if (st.icePrice) updateTicker(st.icePrice); 
+  }
 }
 
 function updateTicker(price) {
@@ -1517,7 +1524,7 @@ function addActivity(msg) {
 function renderAll() {
   renderLeads(); renderSuppliers(); renderQuotes();
   renderOrders(); renderSupplierQuotes(); updateKPIs();
-  populateClientSelects();
+  populateClientSelects(); renderPriceHistory();
   if (st.icePrice) updateTicker(st.icePrice);
 }
 
