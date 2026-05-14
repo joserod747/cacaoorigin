@@ -602,10 +602,11 @@
             <span class="section-title">Cotizaciones de proveedores</span>
             <button class="btn btn-outline btn-sm" onclick="openModal('modalSupplierQuote')">+ Subir cotización</button>
           </div>
-          <table>
+          <table class="desktop-table">
             <thead><tr><th>Proveedor</th><th>Fecha</th><th>Precio FOB</th><th>Volumen</th><th>Grado</th><th>Válido hasta</th><th>Archivo</th></tr></thead>
             <tbody id="supplierQuotesBody"></tbody>
           </table>
+          <div class="mobile-cards" id="sqMobile"></div>
         </div>
       </div>
 
@@ -686,10 +687,11 @@
         </div>
         <div id="tabSent">
           <div class="section">
-            <table>
+            <table class="desktop-table">
               <thead><tr><th>#</th><th>Cliente</th><th>Fecha</th><th>Precio/MT</th><th>Volumen</th><th>Total</th><th>Estado</th><th></th></tr></thead>
               <tbody id="quotesBody"></tbody>
             </table>
+            <div class="mobile-cards" id="quotesMobile"></div>
           </div>
         </div>
         <div id="tabReceived" style="display:none;">
@@ -886,12 +888,6 @@ const st = {
 };
 
 function save() {
-  localStorage.setItem('co_leads', JSON.stringify(st.leads));
-  localStorage.setItem('co_suppliers', JSON.stringify(st.suppliers));
-  localStorage.setItem('co_quotes', JSON.stringify(st.quotes));
-  localStorage.setItem('co_sq', JSON.stringify(st.supplierQuotes));
-  localStorage.setItem('co_orders', JSON.stringify(st.orders));
-  localStorage.setItem('co_ph', JSON.stringify(st.priceHistory));
   localStorage.setItem('co_ice', st.icePrice);
 }
 
@@ -926,12 +922,18 @@ async function loadUser(token) {
   } catch(e) { console.error(e); }
 }
 
-function showPortal() {
+async function showPortal() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('portal').style.display = 'block';
   document.getElementById('userEmail').textContent = st.user.mail || st.user.userPrincipalName || '—';
   document.getElementById('userName').textContent = st.user.displayName || '';
   document.getElementById('dashDate').textContent = new Date().toLocaleDateString('es-ES', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const [leads, suppliers, quotes, sq, orders, ph] = await Promise.all([
+    dbGet('leads'), dbGet('suppliers'), dbGet('quotes'),
+    dbGet('supplierQuotes'), dbGet('orders'), dbGet('priceHistory')
+  ]);
+  st.leads = leads; st.suppliers = suppliers; st.quotes = quotes;
+  st.supplierQuotes = sq; st.orders = orders; st.priceHistory = ph;
   fetchPrice();
   renderAll();
   setInterval(fetchPrice, 600000);
@@ -1003,7 +1005,7 @@ function loadLivePrice() {
 }
 
 // ─── PRICE HISTORY ────────────────────────────────────────────────────────────
-function recordPrice(manual) {
+async function recordPrice(manual) {
   if (!st.icePrice) return;
   const today = new Date().toISOString().split('T')[0];
   if (!manual) {
@@ -1052,9 +1054,10 @@ function renderPriceHistory() {
     </tr>`).join('') : '<tr><td colspan="4" class="empty">Sin registros.</td></tr>';
 }
 
-function clearPriceHistory() {
+async function clearPriceHistory() {
   if (!confirm('¿Eliminar todo el histórico de precios?')) return;
-  st.priceHistory = []; save(); renderPriceHistory();
+  for (const r of st.priceHistory) { await dbDelete('priceHistory', r.id); }
+  st.priceHistory = []; renderPriceHistory();
 }
 
 // ─── QUOTER ───────────────────────────────────────────────────────────────────
@@ -1073,7 +1076,7 @@ function calcQuote() {
   document.getElementById('r-profit').textContent = (margin && vol) ? `$${(margin*vol).toLocaleString()} USD` : '—';
 }
 
-function saveQuote() {
+async function saveQuote() {
   const ice = parseFloat(document.getElementById('qIce').value);
   const vol = parseFloat(document.getElementById('qVol').value);
   if (!ice || !vol) { alert('Ingresa precio ICE y volumen'); return; }
@@ -1090,7 +1093,9 @@ function saveQuote() {
     incoterm: document.getElementById('qInco').value,
     notes: document.getElementById('qNotes').value, status: 'Borrador'
   };
-  st.quotes.unshift(q); save(); renderQuotes();
+  await dbSave('quotes', q);
+  st.quotes = await dbGet('quotes');
+  renderQuotes();
   addActivity(`Cotización guardada — $${sell.toFixed(0)}/MT × ${vol} MT`);
   alert('✅ Cotización guardada');
 }
@@ -1126,7 +1131,7 @@ async function sendEmail() {
 }
 
 // ─── LEADS ────────────────────────────────────────────────────────────────────
-function saveLead() {
+async function saveLead() {
   const company = document.getElementById('lCompany').value.trim();
   if (!company) { alert('Ingresa el nombre de la empresa'); return; }
   const lead = {
@@ -1147,7 +1152,10 @@ function saveLead() {
   } else {
     st.leads.unshift(lead);
   }
-  st.editingId = null; save(); renderLeads(); populateClientSelects();
+  st.editingId = null;
+  await dbSave('leads', lead);
+  st.leads = await dbGet('leads');
+  renderLeads(); populateClientSelects();
   updateKPIs(); addActivity(`Lead: ${company}`); closeModal('modalLead');
 }
 
@@ -1199,10 +1207,11 @@ function editLead(id) {
   openModal('modalLead');
 }
 
-function deleteLead(id) {
+async function deleteLead(id) {
   if (!confirm('¿Eliminar este lead?')) return;
+  await dbDelete('leads', String(id));
   st.leads = st.leads.filter(l => l.id !== id);
-  save(); renderLeads(); updateKPIs();
+  renderLeads(); updateKPIs();
 }
 
 function filterLeads(q) {
@@ -1234,7 +1243,7 @@ function renderPipeline() {
 }
 
 // ─── SUPPLIERS ────────────────────────────────────────────────────────────────
-function saveSupplier() {
+async function saveSupplier() {
   const company = document.getElementById('pCompany').value.trim();
   if (!company) { alert('Ingresa nombre de empresa'); return; }
   const s = {
@@ -1248,7 +1257,9 @@ function saveSupplier() {
     status: document.getElementById('pStatus').value,
     notes: document.getElementById('pNotes').value
   };
-  st.suppliers.unshift(s); save(); renderSuppliers(); updateKPIs();
+  await dbSave('suppliers', s);
+  st.suppliers = await dbGet('suppliers');
+  renderSuppliers(); updateKPIs();
   addActivity(`Proveedor: ${company}`); closeModal('modalSupplier');
 }
 
@@ -1283,10 +1294,11 @@ function renderSuppliers() {
   }
 }
 
-function deleteSupplier(id) {
+async function deleteSupplier(id) {
   if (!confirm('¿Eliminar proveedor?')) return;
+  await dbDelete('suppliers', String(id));
   st.suppliers = st.suppliers.filter(s => s.id !== id);
-  save(); renderSuppliers(); updateKPIs();
+  renderSuppliers(); updateKPIs();
 }
 
 function populateSupplierSelects() {
@@ -1301,7 +1313,7 @@ function handleFile(input) {
   }
 }
 
-function saveSupplierQuote() {
+async function saveSupplierQuote() {
   const suppEl = document.getElementById('sqSupplier');
   const supp = st.suppliers.find(s => s.id == suppEl.value);
   const sq = {
@@ -1314,21 +1326,38 @@ function saveSupplierQuote() {
     validUntil: document.getElementById('sqValid').value,
     fileName: st.currentFile ? st.currentFile.name : null
   };
-  st.supplierQuotes.unshift(sq); st.currentFile = null; save();
+  await dbSave('supplierQuotes', sq); st.currentFile = null;
+  st.supplierQuotes = await dbGet('supplierQuotes');
   renderSupplierQuotes(); renderSupplierQuotes2();
   addActivity(`Cotización proveedor: ${sq.supplierName}`); closeModal('modalSupplierQuote');
 }
 
 function renderSupplierQuotes() {
   const tbody = document.getElementById('supplierQuotesBody');
-  tbody.innerHTML = st.supplierQuotes.length ? st.supplierQuotes.map(q => `
-    <tr>
-      <td>${q.supplierName}</td><td>${q.date||'—'}</td>
-      <td>${q.price?'$'+q.price+' USD/MT':'—'}</td>
-      <td>${q.volume?q.volume+' MT':'—'}</td>
-      <td>${q.grade||'—'}</td><td>${q.validUntil||'—'}</td>
-      <td>${q.fileName?'📎 '+q.fileName:'—'}</td>
-    </tr>`).join('') : '<tr><td colspan="7" class="empty">Sin cotizaciones.</td></tr>';
+  const mCards = document.getElementById('sqMobile');
+  if (!st.supplierQuotes.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">Sin cotizaciones.</td></tr>';
+    if(mCards) mCards.innerHTML = '<div class="empty">Sin cotizaciones.</div>';
+  } else {
+    tbody.innerHTML = st.supplierQuotes.map(q => `
+      <tr>
+        <td>${q.supplierName}</td><td>${q.date||'—'}</td>
+        <td>${q.price?'$'+q.price+' USD/MT':'—'}</td>
+        <td>${q.volume?q.volume+' MT':'—'}</td>
+        <td>${q.grade||'—'}</td><td>${q.validUntil||'—'}</td>
+        <td>${q.fileName?'📎 '+q.fileName:'—'}</td>
+      </tr>`).join('');
+    if(mCards) mCards.innerHTML = st.supplierQuotes.map(q => `
+      <div class="m-card">
+        <div class="m-card-title">${q.supplierName}</div>
+        <div class="m-card-row"><span class="m-card-label">Fecha</span><span class="m-card-val">${q.date||'—'}</span></div>
+        <div class="m-card-row"><span class="m-card-label">Precio FOB</span><span class="m-card-val">${q.price?'$'+q.price+' USD/MT':'—'}</span></div>
+        <div class="m-card-row"><span class="m-card-label">Volumen</span><span class="m-card-val">${q.volume?q.volume+' MT':'—'}</span></div>
+        <div class="m-card-row"><span class="m-card-label">Grado</span><span class="m-card-val">${q.grade||'—'}</span></div>
+        <div class="m-card-row"><span class="m-card-label">Válido hasta</span><span class="m-card-val">${q.validUntil||'—'}</span></div>
+        ${q.fileName?`<div class="m-card-row"><span class="m-card-label">Archivo</span><span class="m-card-val">📎 ${q.fileName}</span></div>`:''}
+      </div>`).join('');
+  }
 }
 
 function renderSupplierQuotes2() {
@@ -1338,16 +1367,33 @@ function renderSupplierQuotes2() {
 // ─── QUOTES ───────────────────────────────────────────────────────────────────
 function renderQuotes() {
   const tbody = document.getElementById('quotesBody');
-  tbody.innerHTML = st.quotes.length ? st.quotes.map((q,i) => `
-    <tr>
-      <td>#${String(i+1).padStart(3,'0')}</td>
-      <td>${q.client||'—'}</td><td>${q.date}</td>
-      <td>$${q.sellPrice?.toFixed(0)||'—'}</td>
-      <td>${q.volume} MT</td>
-      <td>$${q.total?.toLocaleString()||'—'}</td>
-      <td><span class="badge b-cotizado">${q.status}</span></td>
-      <td><button class="btn btn-outline btn-sm" onclick="resendQuote(${q.id})">Reenviar</button></td>
-    </tr>`).join('') : '<tr><td colspan="8" class="empty">No hay cotizaciones.</td></tr>';
+  const mCards = document.getElementById('quotesMobile');
+  if (!st.quotes.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty">No hay cotizaciones.</td></tr>';
+    if(mCards) mCards.innerHTML = '<div class="empty">No hay cotizaciones.</div>';
+  } else {
+    tbody.innerHTML = st.quotes.map((q,i) => `
+      <tr>
+        <td>#${String(i+1).padStart(3,'0')}</td>
+        <td>${q.client||'—'}</td><td>${q.date}</td>
+        <td>$${q.sellPrice?.toFixed(0)||'—'}</td>
+        <td>${q.volume} MT</td>
+        <td>$${q.total?.toLocaleString()||'—'}</td>
+        <td><span class="badge b-cotizado">${q.status}</span></td>
+        <td><button class="btn btn-outline btn-sm" onclick="resendQuote(${q.id})">Reenviar</button></td>
+      </tr>`).join('');
+    if(mCards) mCards.innerHTML = st.quotes.map((q,i) => `
+      <div class="m-card">
+        <div class="m-card-title">#${String(i+1).padStart(3,'0')} — ${q.client||'—'} <span class="badge b-cotizado" style="float:right">${q.status}</span></div>
+        <div class="m-card-row"><span class="m-card-label">Fecha</span><span class="m-card-val">${q.date}</span></div>
+        <div class="m-card-row"><span class="m-card-label">Precio/MT</span><span class="m-card-val">$${q.sellPrice?.toFixed(0)||'—'}</span></div>
+        <div class="m-card-row"><span class="m-card-label">Volumen</span><span class="m-card-val">${q.volume} MT</span></div>
+        <div class="m-card-row"><span class="m-card-label">Total</span><span class="m-card-val">$${q.total?.toLocaleString()||'—'}</span></div>
+        <div class="m-card-actions">
+          <button class="btn btn-outline btn-sm" onclick="resendQuote(${q.id})">Reenviar</button>
+        </div>
+      </div>`).join('');
+  }
 }
 
 function resendQuote(id) {
@@ -1362,7 +1408,7 @@ function resendQuote(id) {
 }
 
 // ─── ORDERS ───────────────────────────────────────────────────────────────────
-function saveOrder() {
+async function saveOrder() {
   const cl = document.getElementById('ordClient');
   const sp = document.getElementById('ordSupplier');
   const order = {
@@ -1377,7 +1423,9 @@ function saveOrder() {
     bl: document.getElementById('ordBL').value,
     notes: document.getElementById('ordNotes').value
   };
-  st.orders.unshift(order); save(); renderOrders(); updateKPIs();
+  await dbSave('orders', order);
+  st.orders = await dbGet('orders');
+  renderOrders(); updateKPIs();
   addActivity(`Pedido: ${order.client} ${order.volume} MT`); closeModal('modalOrder');
 }
 
@@ -1420,9 +1468,9 @@ function renderOrders() {
   }
 }
 
-function updateOrder(id, status) {
+async function updateOrder(id, status) {
   const o = st.orders.find(x => x.id === id);
-  if (o) { o.status = status; save(); renderOrders(); addActivity(`Pedido actualizado: ${o.client} → ${status}`); }
+  if (o) { o.status = status; await dbSave('orders', o); renderOrders(); addActivity(`Pedido actualizado: ${o.client} → ${status}`); }
 }
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
