@@ -350,46 +350,46 @@
       }
       .nav-item.active{border-left:none;border-top-color:var(--accent);}
       .nav-item svg{width:18px;height:18px;}
-      .main{margin-left:0;padding:0.75rem;padding-bottom:72px;}
-      .kpi-grid{grid-template-columns:1fr 1fr;gap:0.75rem;}
-      .kpi-card{padding:1rem;}
-      .kpi-value{font-size:28px;}
+      .main{margin-left:0;padding:1rem;padding-bottom:72px;}
+      .kpi-grid{grid-template-columns:1fr 1fr;}
       .price-ticker{gap:1rem;padding:1rem;}
       .quoter-wrap{grid-template-columns:1fr;}
       .form-grid{grid-template-columns:1fr;}
       .pipeline{grid-template-columns:1fr 1fr;}
-      .topbar{flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem;}
-      .topbar h1{font-size:22px;}
-      .topbar > div{display:flex;flex-wrap:wrap;gap:0.5rem;width:100%;}
+      .topbar{flex-wrap:wrap;}
+      .modal{max-width:100%;}
+      .overlay{padding:0.5rem;}
+      .modal-bd{grid-template-columns:1fr;}
+    }
+
+    /* ── MOBILE ──────────────────────────────────────────────── */
+    @media(max-width:768px){
+      .sidebar{width:100%;min-height:auto;position:fixed;bottom:0;top:auto;flex-direction:row;z-index:200;border-top:0.5px solid #2a2420;}
+      .sidebar-logo,.sidebar-footer,.nav-section{display:none;}
+      .sidebar-nav{display:flex;flex-direction:row;padding:0;overflow-x:auto;width:100%;}
+      .nav-item{flex-direction:column;padding:8px 10px;font-size:9px;letter-spacing:0;border-left:none;border-top:2px solid transparent;gap:3px;min-width:56px;text-align:center;flex:1;justify-content:center;}
+      .nav-item.active{border-left:none;border-top-color:var(--accent);}
+      .nav-item svg{width:18px;height:18px;}
+      .main{margin-left:0;padding:0.75rem;padding-bottom:72px;}
+      .kpi-grid{grid-template-columns:1fr 1fr;gap:0.75rem;}
+      .kpi-card{padding:1rem;}
+      .kpi-value{font-size:28px;}
+      .price-ticker{gap:1rem;padding:1rem;flex-wrap:wrap;}
+      .quoter-wrap{grid-template-columns:1fr;}
+      .form-grid{grid-template-columns:1fr;}
+      .pipeline{grid-template-columns:1fr 1fr;}
+      .topbar{flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem;}
+      .topbar h1{font-size:22px;width:100%;}
       .modal{max-width:100%;}
       .overlay{padding:0.5rem;align-items:flex-end;}
       .modal{max-height:92vh;}
       .modal-bd{grid-template-columns:1fr;}
       .section-header{flex-wrap:wrap;gap:0.5rem;}
 
-      /* Hide desktop tables on mobile */
-      .desktop-table{display:none;}
-
-      /* Mobile cards */
-      .mobile-cards{display:block;}
-      .m-card{
-        background:white;margin-bottom:0.5rem;
-        padding:1rem;border-left:2px solid var(--border);
-      }
-      .m-card-title{font-size:14px;font-weight:500;color:var(--dark);margin-bottom:6px;}
-      .m-card-row{display:flex;justify-content:space-between;align-items:center;
-        font-size:12px;color:var(--mid);margin-bottom:4px;}
-      .m-card-row:last-child{margin-bottom:0;}
-      .m-card-label{color:var(--mid);}
-      .m-card-val{color:var(--dark);font-weight:500;text-align:right;}
-      .m-card-actions{display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border);}
-      .m-card-actions .btn{flex:1;text-align:center;padding:7px 8px;font-size:10px;}
-    }
-
-    /* Desktop: show tables, hide mobile cards */
-    @media(min-width:769px){
-      .mobile-cards{display:none;}
-      .desktop-table{display:table;width:100%;}
+      /* Tables scroll horizontally on mobile */
+      .section{overflow-x:auto;}
+      table{min-width:500px;}
+      th,td{padding:8px 0.75rem;white-space:nowrap;}
     }
   </style>
 </head>
@@ -542,22 +542,20 @@
         </div>
         <div class="section">
           <div class="section-header"><span class="section-title">Promedios mensuales</span></div>
-          <table class="desktop-table">
+          <table>
             <thead><tr><th>Mes</th><th>Promedio</th><th>Mínimo</th><th>Máximo</th><th>Registros</th></tr></thead>
             <tbody id="monthlyAvgBody"></tbody>
           </table>
-          <div class="mobile-cards" id="monthlyAvgMobile"></div>
         </div>
         <div class="section">
           <div class="section-header">
             <span class="section-title">Histórico completo</span>
             <button class="btn btn-outline btn-sm btn-red" onclick="clearPriceHistory()">Limpiar histórico</button>
           </div>
-          <table class="desktop-table">
+          <table>
             <thead><tr><th>Fecha</th><th>Hora</th><th>Precio ICE NY</th><th>Fuente</th></tr></thead>
             <tbody id="priceHistoryBody"></tbody>
           </table>
-          <div class="mobile-cards" id="priceHistoryMobile"></div>
         </div>
       </div>
 
@@ -573,11 +571,10 @@
         </div>
         <div id="leadsTableView">
           <div class="section">
-            <table class="desktop-table">
+            <table>
               <thead><tr><th>Empresa</th><th>Contacto</th><th>País</th><th>Volumen MT</th><th>Estado</th><th>Última actividad</th><th></th></tr></thead>
               <tbody id="leadsBody"></tbody>
             </table>
-            <div class="mobile-cards" id="leadsMobile"></div>
           </div>
         </div>
         <div id="leadsPipelineView" style="display:none;">
@@ -593,22 +590,20 @@
         </div>
         <div class="section">
           <div class="section-header"><span class="section-title">Exportadores</span></div>
-          <table class="desktop-table">
+          <table>
             <thead><tr><th>Empresa</th><th>País</th><th>Contacto</th><th>Último precio FOB</th><th>Diferencial</th><th>Estado</th><th></th></tr></thead>
             <tbody id="suppliersBody"></tbody>
           </table>
-          <div class="mobile-cards" id="suppliersMobile"></div>
         </div>
         <div class="section">
           <div class="section-header">
             <span class="section-title">Cotizaciones de proveedores</span>
             <button class="btn btn-outline btn-sm" onclick="openModal('modalSupplierQuote')">+ Subir cotización</button>
           </div>
-          <table class="desktop-table">
+          <table>
             <thead><tr><th>Proveedor</th><th>Fecha</th><th>Precio FOB</th><th>Volumen</th><th>Grado</th><th>Válido hasta</th><th>Archivo</th></tr></thead>
             <tbody id="supplierQuotesBody"></tbody>
           </table>
-          <div class="mobile-cards" id="sqMobile"></div>
         </div>
       </div>
 
@@ -689,11 +684,10 @@
         </div>
         <div id="tabSent">
           <div class="section">
-            <table class="desktop-table">
+            <table>
               <thead><tr><th>#</th><th>Cliente</th><th>Fecha</th><th>Precio/MT</th><th>Volumen</th><th>Total</th><th>Estado</th><th></th></tr></thead>
               <tbody id="quotesBody"></tbody>
             </table>
-            <div class="mobile-cards" id="quotesMobile"></div>
           </div>
         </div>
         <div id="tabReceived" style="display:none;">
@@ -713,11 +707,10 @@
           <button class="btn btn-dark" onclick="openModal('modalOrder')">+ Nuevo pedido</button>
         </div>
         <div class="section">
-          <table class="desktop-table">
+          <table>
             <thead><tr><th>#</th><th>Cliente</th><th>Proveedor</th><th>MT</th><th>USD/MT</th><th>Estado</th><th>ETD</th><th>BL</th><th></th></tr></thead>
             <tbody id="ordersBody"></tbody>
           </table>
-          <div class="mobile-cards" id="ordersMobile"></div>
         </div>
       </div>
 
@@ -881,16 +874,44 @@ const SCOPES = 'openid profile email User.Read Mail.Send';
 const st = {
   user: null, token: null, editingId: null, currentFile: null,
   icePrice: parseFloat(localStorage.getItem('co_ice') || '0'),
-  leads: JSON.parse(localStorage.getItem('co_leads') || '[]'),
-  suppliers: JSON.parse(localStorage.getItem('co_suppliers') || '[]'),
-  quotes: JSON.parse(localStorage.getItem('co_quotes') || '[]'),
-  supplierQuotes: JSON.parse(localStorage.getItem('co_sq') || '[]'),
-  orders: JSON.parse(localStorage.getItem('co_orders') || '[]'),
-  priceHistory: []
+  leads: [], suppliers: [], quotes: [], supplierQuotes: [], orders: [], priceHistory: []
 };
 
 function save() {
+  // Data is saved directly to Cosmos DB via API
   localStorage.setItem('co_ice', st.icePrice);
+}
+
+async function dbGet(collection) {
+  try {
+    const res = await fetch(`${API_BASE}/data/${collection}`, {
+      headers: { Authorization: `Bearer ${st.token}` }
+    });
+    const data = await res.json();
+    return data.success ? data.data : [];
+  } catch(e) { return []; }
+}
+
+async function dbSave(collection, item) {
+  try {
+    item.id = item.id ? String(item.id) : String(Date.now());
+    const res = await fetch(`${API_BASE}/data/${collection}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${st.token}` },
+      body: JSON.stringify(item)
+    });
+    const data = await res.json();
+    return data.success ? data.data : null;
+  } catch(e) { return null; }
+}
+
+async function dbDelete(collection, id) {
+  try {
+    await fetch(`${API_BASE}/data/${collection}/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${st.token}` }
+    });
+  } catch(e) {}
 }
 
 // ─── AUTH ─────────────────────────────────────────────────────────────────────
@@ -930,14 +951,15 @@ async function showPortal() {
   document.getElementById('userEmail').textContent = st.user.mail || st.user.userPrincipalName || '—';
   document.getElementById('userName').textContent = st.user.displayName || '';
   document.getElementById('dashDate').textContent = new Date().toLocaleDateString('es-ES', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  // Load all data from Cosmos DB
   const [leads, suppliers, quotes, sq, orders, ph] = await Promise.all([
     dbGet('leads'), dbGet('suppliers'), dbGet('quotes'),
     dbGet('supplierQuotes'), dbGet('orders'), dbGet('priceHistory')
   ]);
   st.leads = leads; st.suppliers = suppliers; st.quotes = quotes;
   st.supplierQuotes = sq; st.orders = orders; st.priceHistory = ph;
+  fetchPrice();
   renderAll();
-  await fetchPrice();
   setInterval(fetchPrice, 600000);
 }
 
@@ -977,19 +999,12 @@ async function fetchPrice() {
     const res = await fetch(`${API_BASE}/cocoa-price`);
     const data = await res.json();
     if (data.success && data.price) {
-      st.icePrice = parseFloat(data.price);
+      st.icePrice = data.price;
       save();
-      updateTicker(st.icePrice);
-      await recordPrice(false);
-      // Reload price history from DB after recording
-      st.priceHistory = await dbGet('priceHistory');
-      renderPriceHistory();
-    } else if (st.icePrice) {
-      updateTicker(st.icePrice);
+      updateTicker(data.price);
+      recordPrice(false);
     }
-  } catch(e) { 
-    if (st.icePrice) updateTicker(st.icePrice); 
-  }
+  } catch(e) { updateTicker(st.icePrice); }
 }
 
 function updateTicker(price) {
@@ -998,15 +1013,13 @@ function updateTicker(price) {
   document.getElementById('icePrice').textContent = '$' + fmt;
   document.getElementById('priceTime').textContent = 'Actualizado: ' + new Date().toLocaleTimeString('es-ES');
   document.getElementById('livePriceLabel').textContent = '$' + fmt + ' USD/MT';
-  const mcp = document.getElementById('mCurrentPrice');
-  if (mcp) mcp.textContent = '$' + fmt;
-  // Re-render price history if on mercado page
-  if (document.getElementById('page-mercado')?.classList.contains('active')) renderPriceHistory();
+  if (document.getElementById('mCurrentPrice'))
+    document.getElementById('mCurrentPrice').textContent = '$' + fmt;
 }
 
-async function setManualPrice() {
+function setManualPrice() {
   const val = parseFloat(document.getElementById('manualPriceInput').value);
-  if (val > 0) { st.icePrice = val; save(); updateTicker(val); await recordPrice(true); }
+  if (val > 0) { st.icePrice = val; save(); updateTicker(val); recordPrice(true); }
   closeModal('modalPrice');
 }
 
@@ -1020,26 +1033,22 @@ async function recordPrice(manual) {
   if (!st.icePrice) return;
   const today = new Date().toISOString().split('T')[0];
   if (!manual) {
-    const alreadyToday = st.priceHistory.find(r => r.date === today && (r.source === 'API' || !r.source));
+    const alreadyToday = st.priceHistory.find(r => r.date === today && r.source === 'API');
     if (alreadyToday) return;
   }
-  st.priceHistory.unshift({
-    id: Date.now(), date: today,
+  const record = {
+    id: String(Date.now()), date: today,
     time: new Date().toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'}),
     price: st.icePrice, source: manual ? 'Manual' : 'API'
-  });
-  save();
+  };
+  st.priceHistory.unshift(record);
+  await dbSave('priceHistory', record);
   if (document.getElementById('page-mercado').classList.contains('active')) renderPriceHistory();
   addActivity('Precio ICE NY registrado: $' + st.icePrice.toLocaleString() + ' USD/MT');
 }
 
 function renderPriceHistory() {
-  // Clean data from Cosmos DB extra fields
-  const h = st.priceHistory
-    .filter(r => r.price && r.date)
-    .map(r => ({ id: r.id, date: r.date, time: r.time||'—', price: parseFloat(r.price), source: r.source||'API' }))
-    .sort((a,b) => b.id - a.id);
-
+  const h = st.priceHistory;
   const thisMonth = new Date().toISOString().slice(0,7);
   const monthly = h.filter(r => r.date.startsWith(thisMonth));
   if (monthly.length) {
@@ -1068,21 +1077,11 @@ function renderPriceHistory() {
       <td><strong>$${r.price.toLocaleString()} USD/MT</strong></td>
       <td><span class="badge ${r.source==='API'?'b-api':'b-manual'}">${r.source}</span></td>
     </tr>`).join('') : '<tr><td colspan="4" class="empty">Sin registros.</td></tr>';
-
-  // Mobile price history cards
-  const mCards = document.getElementById('priceHistoryMobile');
-  if (mCards) {
-    mCards.innerHTML = h.length ? h.map(r => `
-      <div class="m-card">
-        <div class="m-card-title">$${r.price.toLocaleString()} USD/MT <span class="badge ${r.source==='API'?'b-api':'b-manual'}" style="float:right">${r.source}</span></div>
-        <div class="m-card-row"><span class="m-card-label">Fecha</span><span class="m-card-val">${r.date}</span></div>
-        <div class="m-card-row"><span class="m-card-label">Hora</span><span class="m-card-val">${r.time}</span></div>
-      </div>`).join('') : '<div class="empty">Sin registros.</div>';
-  }
 }
 
 async function clearPriceHistory() {
   if (!confirm('¿Eliminar todo el histórico de precios?')) return;
+  // Delete all price history - reload from DB after
   for (const r of st.priceHistory) { await dbDelete('priceHistory', r.id); }
   st.priceHistory = []; renderPriceHistory();
 }
@@ -1121,7 +1120,7 @@ async function saveQuote() {
     notes: document.getElementById('qNotes').value, status: 'Borrador'
   };
   await dbSave('quotes', q);
-  st.quotes = await dbGet('quotes');
+  const quotes = await dbGet('quotes'); st.quotes = quotes;
   renderQuotes();
   addActivity(`Cotización guardada — $${sell.toFixed(0)}/MT × ${vol} MT`);
   alert('✅ Cotización guardada');
@@ -1181,44 +1180,27 @@ async function saveLead() {
   }
   st.editingId = null;
   await dbSave('leads', lead);
-  st.leads = await dbGet('leads');
+  const leads = await dbGet('leads'); st.leads = leads;
   renderLeads(); populateClientSelects();
   updateKPIs(); addActivity(`Lead: ${company}`); closeModal('modalLead');
 }
 
 function renderLeads() {
   const tbody = document.getElementById('leadsBody');
-  const mCards = document.getElementById('leadsMobile');
-  const statusClass = {Prospecto:'b-prospecto',Contactado:'b-contactado',Cotizado:'b-cotizado','Negociación':'b-negociacion',Cerrado:'b-cerrado',Perdido:'b-perdido'};
-  if (!st.leads.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty">No hay leads. Añade el primero.</td></tr>';
-    if(mCards) mCards.innerHTML = '<div class="empty">No hay leads. Añade el primero.</div>';
-  } else {
-    tbody.innerHTML = st.leads.map(l => `
-      <tr>
-        <td><strong>${l.company}</strong></td>
-        <td>${l.contact||'—'}</td>
-        <td>${l.country||'—'}</td>
-        <td>${l.volume?l.volume+' MT':'—'}</td>
-        <td><span class="badge ${statusClass[l.status]||'b-prospecto'}">${l.status}</span></td>
-        <td>${l.date||'—'}</td>
-        <td style="display:flex;gap:6px;">
-          <button class="btn btn-outline btn-sm" onclick="editLead(${l.id})">Editar</button>
-          <button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="deleteLead(${l.id})">✕</button>
-        </td>
-      </tr>`).join('');
-    if(mCards) mCards.innerHTML = st.leads.map(l => `
-      <div class="m-card" style="border-left-color:var(--accent)">
-        <div class="m-card-title">${l.company} <span class="badge ${statusClass[l.status]||'b-prospecto'}" style="float:right">${l.status}</span></div>
-        <div class="m-card-row"><span class="m-card-label">Contacto</span><span class="m-card-val">${l.contact||'—'}</span></div>
-        <div class="m-card-row"><span class="m-card-label">País</span><span class="m-card-val">${l.country||'—'}</span></div>
-        <div class="m-card-row"><span class="m-card-label">Volumen</span><span class="m-card-val">${l.volume?l.volume+' MT':'—'}</span></div>
-        <div class="m-card-actions">
-          <button class="btn btn-outline btn-sm" onclick="editLead(${l.id})">Editar</button>
-          <button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="deleteLead(${l.id})">Eliminar</button>
-        </div>
-      </div>`).join('');
-  }
+  const statusClass = {Prospecto:'b-prospecto',Contactado:'b-contactado',Cotizado:'b-cotizado',Negociación:'b-negociacion',Cerrado:'b-cerrado',Perdido:'b-perdido'};
+  tbody.innerHTML = st.leads.length ? st.leads.map(l => `
+    <tr>
+      <td><strong>${l.company}</strong></td>
+      <td>${l.contact||'—'}</td>
+      <td>${l.country||'—'}</td>
+      <td>${l.volume?l.volume+' MT':'—'}</td>
+      <td><span class="badge ${statusClass[l.status]||'b-prospecto'}">${l.status}</span></td>
+      <td>${l.date||'—'}</td>
+      <td style="display:flex;gap:6px;">
+        <button class="btn btn-outline btn-sm" onclick="editLead(${l.id})">Editar</button>
+        <button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="deleteLead(${l.id})">✕</button>
+      </td>
+    </tr>`).join('') : '<tr><td colspan="7" class="empty">No hay leads. Añade el primero.</td></tr>';
   renderPipeline();
 }
 
@@ -1236,7 +1218,7 @@ function editLead(id) {
 
 async function deleteLead(id) {
   if (!confirm('¿Eliminar este lead?')) return;
-  await dbDelete('leads', String(id));
+  await dbDelete('leads', id);
   st.leads = st.leads.filter(l => l.id !== id);
   renderLeads(); updateKPIs();
 }
@@ -1285,45 +1267,28 @@ async function saveSupplier() {
     notes: document.getElementById('pNotes').value
   };
   await dbSave('suppliers', s);
-  st.suppliers = await dbGet('suppliers');
+  const suppliers = await dbGet('suppliers'); st.suppliers = suppliers;
   renderSuppliers(); updateKPIs();
   addActivity(`Proveedor: ${company}`); closeModal('modalSupplier');
 }
 
 function renderSuppliers() {
   const tbody = document.getElementById('suppliersBody');
-  const mCards = document.getElementById('suppliersMobile');
-  if (!st.suppliers.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty">No hay proveedores.</td></tr>';
-    if(mCards) mCards.innerHTML = '<div class="empty">No hay proveedores.</div>';
-  } else {
-    tbody.innerHTML = st.suppliers.map(s => `
-      <tr>
-        <td><strong>${s.company}</strong></td>
-        <td>${s.country||'—'}</td>
-        <td>${s.contact||'—'}<br><small style="color:var(--mid)">${s.email||''}</small></td>
-        <td>${s.price?'$'+s.price+' USD/MT':'—'}</td>
-        <td>${s.differential||'—'}</td>
-        <td><span class="badge ${s.status==='Activo'?'b-activo':'b-inactivo'}">${s.status}</span></td>
-        <td><button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="deleteSupplier(${s.id})">✕</button></td>
-      </tr>`).join('');
-    if(mCards) mCards.innerHTML = st.suppliers.map(s => `
-      <div class="m-card">
-        <div class="m-card-title">${s.company} <span class="badge ${s.status==='Activo'?'b-activo':'b-inactivo'}" style="float:right">${s.status}</span></div>
-        <div class="m-card-row"><span class="m-card-label">País</span><span class="m-card-val">${s.country||'—'}</span></div>
-        <div class="m-card-row"><span class="m-card-label">Contacto</span><span class="m-card-val">${s.contact||'—'}</span></div>
-        <div class="m-card-row"><span class="m-card-label">Precio FOB</span><span class="m-card-val">${s.price?'$'+s.price+' USD/MT':'—'}</span></div>
-        <div class="m-card-row"><span class="m-card-label">Diferencial</span><span class="m-card-val">${s.differential||'—'}</span></div>
-        <div class="m-card-actions">
-          <button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="deleteSupplier(${s.id})">Eliminar</button>
-        </div>
-      </div>`).join('');
-  }
+  tbody.innerHTML = st.suppliers.length ? st.suppliers.map(s => `
+    <tr>
+      <td><strong>${s.company}</strong></td>
+      <td>${s.country||'—'}</td>
+      <td>${s.contact||'—'}<br><small style="color:var(--mid)">${s.email||''}</small></td>
+      <td>${s.price?'$'+s.price+' USD/MT':'—'}</td>
+      <td>${s.differential||'—'}</td>
+      <td><span class="badge ${s.status==='Activo'?'b-activo':'b-inactivo'}">${s.status}</span></td>
+      <td><button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="deleteSupplier(${s.id})">✕</button></td>
+    </tr>`).join('') : '<tr><td colspan="7" class="empty">No hay proveedores.</td></tr>';
 }
 
 async function deleteSupplier(id) {
   if (!confirm('¿Eliminar proveedor?')) return;
-  await dbDelete('suppliers', String(id));
+  await dbDelete('suppliers', id);
   st.suppliers = st.suppliers.filter(s => s.id !== id);
   renderSuppliers(); updateKPIs();
 }
@@ -1354,37 +1319,21 @@ async function saveSupplierQuote() {
     fileName: st.currentFile ? st.currentFile.name : null
   };
   await dbSave('supplierQuotes', sq); st.currentFile = null;
-  st.supplierQuotes = await dbGet('supplierQuotes');
+  const sqs = await dbGet('supplierQuotes'); st.supplierQuotes = sqs;
   renderSupplierQuotes(); renderSupplierQuotes2();
   addActivity(`Cotización proveedor: ${sq.supplierName}`); closeModal('modalSupplierQuote');
 }
 
 function renderSupplierQuotes() {
   const tbody = document.getElementById('supplierQuotesBody');
-  const mCards = document.getElementById('sqMobile');
-  if (!st.supplierQuotes.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty">Sin cotizaciones.</td></tr>';
-    if(mCards) mCards.innerHTML = '<div class="empty">Sin cotizaciones.</div>';
-  } else {
-    tbody.innerHTML = st.supplierQuotes.map(q => `
-      <tr>
-        <td>${q.supplierName}</td><td>${q.date||'—'}</td>
-        <td>${q.price?'$'+q.price+' USD/MT':'—'}</td>
-        <td>${q.volume?q.volume+' MT':'—'}</td>
-        <td>${q.grade||'—'}</td><td>${q.validUntil||'—'}</td>
-        <td>${q.fileName?'📎 '+q.fileName:'—'}</td>
-      </tr>`).join('');
-    if(mCards) mCards.innerHTML = st.supplierQuotes.map(q => `
-      <div class="m-card">
-        <div class="m-card-title">${q.supplierName}</div>
-        <div class="m-card-row"><span class="m-card-label">Fecha</span><span class="m-card-val">${q.date||'—'}</span></div>
-        <div class="m-card-row"><span class="m-card-label">Precio FOB</span><span class="m-card-val">${q.price?'$'+q.price+' USD/MT':'—'}</span></div>
-        <div class="m-card-row"><span class="m-card-label">Volumen</span><span class="m-card-val">${q.volume?q.volume+' MT':'—'}</span></div>
-        <div class="m-card-row"><span class="m-card-label">Grado</span><span class="m-card-val">${q.grade||'—'}</span></div>
-        <div class="m-card-row"><span class="m-card-label">Válido hasta</span><span class="m-card-val">${q.validUntil||'—'}</span></div>
-        ${q.fileName?`<div class="m-card-row"><span class="m-card-label">Archivo</span><span class="m-card-val">📎 ${q.fileName}</span></div>`:''}
-      </div>`).join('');
-  }
+  tbody.innerHTML = st.supplierQuotes.length ? st.supplierQuotes.map(q => `
+    <tr>
+      <td>${q.supplierName}</td><td>${q.date||'—'}</td>
+      <td>${q.price?'$'+q.price+' USD/MT':'—'}</td>
+      <td>${q.volume?q.volume+' MT':'—'}</td>
+      <td>${q.grade||'—'}</td><td>${q.validUntil||'—'}</td>
+      <td>${q.fileName?'📎 '+q.fileName:'—'}</td>
+    </tr>`).join('') : '<tr><td colspan="7" class="empty">Sin cotizaciones.</td></tr>';
 }
 
 function renderSupplierQuotes2() {
@@ -1394,33 +1343,16 @@ function renderSupplierQuotes2() {
 // ─── QUOTES ───────────────────────────────────────────────────────────────────
 function renderQuotes() {
   const tbody = document.getElementById('quotesBody');
-  const mCards = document.getElementById('quotesMobile');
-  if (!st.quotes.length) {
-    tbody.innerHTML = '<tr><td colspan="8" class="empty">No hay cotizaciones.</td></tr>';
-    if(mCards) mCards.innerHTML = '<div class="empty">No hay cotizaciones.</div>';
-  } else {
-    tbody.innerHTML = st.quotes.map((q,i) => `
-      <tr>
-        <td>#${String(i+1).padStart(3,'0')}</td>
-        <td>${q.client||'—'}</td><td>${q.date}</td>
-        <td>$${q.sellPrice?.toFixed(0)||'—'}</td>
-        <td>${q.volume} MT</td>
-        <td>$${q.total?.toLocaleString()||'—'}</td>
-        <td><span class="badge b-cotizado">${q.status}</span></td>
-        <td><button class="btn btn-outline btn-sm" onclick="resendQuote(${q.id})">Reenviar</button></td>
-      </tr>`).join('');
-    if(mCards) mCards.innerHTML = st.quotes.map((q,i) => `
-      <div class="m-card">
-        <div class="m-card-title">#${String(i+1).padStart(3,'0')} — ${q.client||'—'} <span class="badge b-cotizado" style="float:right">${q.status}</span></div>
-        <div class="m-card-row"><span class="m-card-label">Fecha</span><span class="m-card-val">${q.date}</span></div>
-        <div class="m-card-row"><span class="m-card-label">Precio/MT</span><span class="m-card-val">$${q.sellPrice?.toFixed(0)||'—'}</span></div>
-        <div class="m-card-row"><span class="m-card-label">Volumen</span><span class="m-card-val">${q.volume} MT</span></div>
-        <div class="m-card-row"><span class="m-card-label">Total</span><span class="m-card-val">$${q.total?.toLocaleString()||'—'}</span></div>
-        <div class="m-card-actions">
-          <button class="btn btn-outline btn-sm" onclick="resendQuote(${q.id})">Reenviar</button>
-        </div>
-      </div>`).join('');
-  }
+  tbody.innerHTML = st.quotes.length ? st.quotes.map((q,i) => `
+    <tr>
+      <td>#${String(i+1).padStart(3,'0')}</td>
+      <td>${q.client||'—'}</td><td>${q.date}</td>
+      <td>$${q.sellPrice?.toFixed(0)||'—'}</td>
+      <td>${q.volume} MT</td>
+      <td>$${q.total?.toLocaleString()||'—'}</td>
+      <td><span class="badge b-cotizado">${q.status}</span></td>
+      <td><button class="btn btn-outline btn-sm" onclick="resendQuote(${q.id})">Reenviar</button></td>
+    </tr>`).join('') : '<tr><td colspan="8" class="empty">No hay cotizaciones.</td></tr>';
 }
 
 function resendQuote(id) {
@@ -1451,7 +1383,7 @@ async function saveOrder() {
     notes: document.getElementById('ordNotes').value
   };
   await dbSave('orders', order);
-  st.orders = await dbGet('orders');
+  const orders = await dbGet('orders'); st.orders = orders;
   renderOrders(); updateKPIs();
   addActivity(`Pedido: ${order.client} ${order.volume} MT`); closeModal('modalOrder');
 }
@@ -1459,40 +1391,19 @@ async function saveOrder() {
 function renderOrders() {
   const statusClass = {'Confirmado':'b-cotizado','En producción':'b-contactado','Listo para embarque':'b-negociacion','Embarcado':'b-cerrado','En tránsito':'b-cerrado','Entregado':'b-activo'};
   const tbody = document.getElementById('ordersBody');
-  const mCards = document.getElementById('ordersMobile');
-  const statuses = ['Confirmado','En producción','Listo para embarque','Embarcado','En tránsito','Entregado'];
-  if (!st.orders.length) {
-    tbody.innerHTML = '<tr><td colspan="9" class="empty">No hay pedidos.</td></tr>';
-    if(mCards) mCards.innerHTML = '<div class="empty">No hay pedidos.</div>';
-  } else {
-    tbody.innerHTML = st.orders.map((o,i) => `
-      <tr>
-        <td>#${String(i+1).padStart(3,'0')}</td>
-        <td>${o.client}</td><td>${o.supplier}</td>
-        <td>${o.volume} MT</td><td>${o.price?'$'+o.price:'—'}</td>
-        <td><span class="badge ${statusClass[o.status]||'b-cotizado'}">${o.status}</span></td>
-        <td>${o.etd||'—'}</td><td>${o.bl||'—'}</td>
-        <td>
-          <select onchange="updateOrder(${o.id},this.value)" style="font-size:11px;padding:4px;border:0.5px solid var(--border);font-family:'Jost',sans-serif;">
-            ${statuses.map(s => `<option${s===o.status?' selected':''}>${s}</option>`).join('')}
-          </select>
-        </td>
-      </tr>`).join('');
-    if(mCards) mCards.innerHTML = st.orders.map((o,i) => `
-      <div class="m-card">
-        <div class="m-card-title">#${String(i+1).padStart(3,'0')} — ${o.client} <span class="badge ${statusClass[o.status]||'b-cotizado'}" style="float:right">${o.status}</span></div>
-        <div class="m-card-row"><span class="m-card-label">Proveedor</span><span class="m-card-val">${o.supplier}</span></div>
-        <div class="m-card-row"><span class="m-card-label">Volumen</span><span class="m-card-val">${o.volume} MT</span></div>
-        <div class="m-card-row"><span class="m-card-label">Precio</span><span class="m-card-val">${o.price?'$'+o.price+' USD/MT':'—'}</span></div>
-        <div class="m-card-row"><span class="m-card-label">ETD</span><span class="m-card-val">${o.etd||'—'}</span></div>
-        <div class="m-card-row"><span class="m-card-label">BL</span><span class="m-card-val">${o.bl||'—'}</span></div>
-        <div style="margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border);">
-          <select onchange="updateOrder(${o.id},this.value)" style="width:100%;padding:8px;border:0.5px solid var(--border);font-family:'Jost',sans-serif;font-size:12px;">
-            ${statuses.map(s => `<option${s===o.status?' selected':''}>${s}</option>`).join('')}
-          </select>
-        </div>
-      </div>`).join('');
-  }
+  tbody.innerHTML = st.orders.length ? st.orders.map((o,i) => `
+    <tr>
+      <td>#${String(i+1).padStart(3,'0')}</td>
+      <td>${o.client}</td><td>${o.supplier}</td>
+      <td>${o.volume} MT</td><td>${o.price?'$'+o.price:'—'}</td>
+      <td><span class="badge ${statusClass[o.status]||'b-cotizado'}">${o.status}</span></td>
+      <td>${o.etd||'—'}</td><td>${o.bl||'—'}</td>
+      <td>
+        <select onchange="updateOrder(${o.id},this.value)" style="font-size:11px;padding:4px;border:0.5px solid var(--border);font-family:'Jost',sans-serif;">
+          ${['Confirmado','En producción','Listo para embarque','Embarcado','En tránsito','Entregado'].map(s => `<option${s===o.status?' selected':''}>${s}</option>`).join('')}
+        </select>
+      </td>
+    </tr>`).join('') : '<tr><td colspan="9" class="empty">No hay pedidos.</td></tr>';
 }
 
 async function updateOrder(id, status) {
@@ -1524,7 +1435,7 @@ function addActivity(msg) {
 function renderAll() {
   renderLeads(); renderSuppliers(); renderQuotes();
   renderOrders(); renderSupplierQuotes(); updateKPIs();
-  populateClientSelects(); renderPriceHistory();
+  populateClientSelects();
   if (st.icePrice) updateTicker(st.icePrice);
 }
 
