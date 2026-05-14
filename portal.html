@@ -991,8 +991,10 @@ function updateTicker(price) {
   document.getElementById('icePrice').textContent = '$' + fmt;
   document.getElementById('priceTime').textContent = 'Actualizado: ' + new Date().toLocaleTimeString('es-ES');
   document.getElementById('livePriceLabel').textContent = '$' + fmt + ' USD/MT';
-  if (document.getElementById('mCurrentPrice'))
-    document.getElementById('mCurrentPrice').textContent = '$' + fmt;
+  const mcp = document.getElementById('mCurrentPrice');
+  if (mcp) mcp.textContent = '$' + fmt;
+  // Re-render price history if on mercado page
+  if (document.getElementById('page-mercado')?.classList.contains('active')) renderPriceHistory();
 }
 
 async function setManualPrice() {
@@ -1011,7 +1013,7 @@ async function recordPrice(manual) {
   if (!st.icePrice) return;
   const today = new Date().toISOString().split('T')[0];
   if (!manual) {
-    const alreadyToday = st.priceHistory.find(r => r.date === today && r.source === 'API');
+    const alreadyToday = st.priceHistory.find(r => r.date === today && (r.source === 'API' || !r.source));
     if (alreadyToday) return;
   }
   st.priceHistory.unshift({
@@ -1025,7 +1027,12 @@ async function recordPrice(manual) {
 }
 
 function renderPriceHistory() {
-  const h = st.priceHistory;
+  // Clean data from Cosmos DB extra fields
+  const h = st.priceHistory
+    .filter(r => r.price && r.date)
+    .map(r => ({ id: r.id, date: r.date, time: r.time||'—', price: parseFloat(r.price), source: r.source||'API' }))
+    .sort((a,b) => b.id - a.id);
+
   const thisMonth = new Date().toISOString().slice(0,7);
   const monthly = h.filter(r => r.date.startsWith(thisMonth));
   if (monthly.length) {
