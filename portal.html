@@ -350,16 +350,46 @@
       }
       .nav-item.active{border-left:none;border-top-color:var(--accent);}
       .nav-item svg{width:18px;height:18px;}
-      .main{margin-left:0;padding:1rem;padding-bottom:72px;}
-      .kpi-grid{grid-template-columns:1fr 1fr;}
+      .main{margin-left:0;padding:0.75rem;padding-bottom:72px;}
+      .kpi-grid{grid-template-columns:1fr 1fr;gap:0.75rem;}
+      .kpi-card{padding:1rem;}
+      .kpi-value{font-size:28px;}
       .price-ticker{gap:1rem;padding:1rem;}
       .quoter-wrap{grid-template-columns:1fr;}
       .form-grid{grid-template-columns:1fr;}
       .pipeline{grid-template-columns:1fr 1fr;}
-      .topbar{flex-wrap:wrap;}
+      .topbar{flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem;}
+      .topbar h1{font-size:22px;}
+      .topbar > div{display:flex;flex-wrap:wrap;gap:0.5rem;width:100%;}
       .modal{max-width:100%;}
-      .overlay{padding:0.5rem;}
+      .overlay{padding:0.5rem;align-items:flex-end;}
+      .modal{max-height:92vh;}
       .modal-bd{grid-template-columns:1fr;}
+      .section-header{flex-wrap:wrap;gap:0.5rem;}
+
+      /* Hide desktop tables on mobile */
+      .desktop-table{display:none;}
+
+      /* Mobile cards */
+      .mobile-cards{display:block;}
+      .m-card{
+        background:white;margin-bottom:0.5rem;
+        padding:1rem;border-left:2px solid var(--border);
+      }
+      .m-card-title{font-size:14px;font-weight:500;color:var(--dark);margin-bottom:6px;}
+      .m-card-row{display:flex;justify-content:space-between;align-items:center;
+        font-size:12px;color:var(--mid);margin-bottom:4px;}
+      .m-card-row:last-child{margin-bottom:0;}
+      .m-card-label{color:var(--mid);}
+      .m-card-val{color:var(--dark);font-weight:500;text-align:right;}
+      .m-card-actions{display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border);}
+      .m-card-actions .btn{flex:1;text-align:center;padding:7px 8px;font-size:10px;}
+    }
+
+    /* Desktop: show tables, hide mobile cards */
+    @media(min-width:769px){
+      .mobile-cards{display:none;}
+      .desktop-table{display:table;width:100%;}
     }
   </style>
 </head>
@@ -541,10 +571,11 @@
         </div>
         <div id="leadsTableView">
           <div class="section">
-            <table>
+            <table class="desktop-table">
               <thead><tr><th>Empresa</th><th>Contacto</th><th>País</th><th>Volumen MT</th><th>Estado</th><th>Última actividad</th><th></th></tr></thead>
               <tbody id="leadsBody"></tbody>
             </table>
+            <div class="mobile-cards" id="leadsMobile"></div>
           </div>
         </div>
         <div id="leadsPipelineView" style="display:none;">
@@ -560,10 +591,11 @@
         </div>
         <div class="section">
           <div class="section-header"><span class="section-title">Exportadores</span></div>
-          <table>
+          <table class="desktop-table">
             <thead><tr><th>Empresa</th><th>País</th><th>Contacto</th><th>Último precio FOB</th><th>Diferencial</th><th>Estado</th><th></th></tr></thead>
             <tbody id="suppliersBody"></tbody>
           </table>
+          <div class="mobile-cards" id="suppliersMobile"></div>
         </div>
         <div class="section">
           <div class="section-header">
@@ -677,10 +709,11 @@
           <button class="btn btn-dark" onclick="openModal('modalOrder')">+ Nuevo pedido</button>
         </div>
         <div class="section">
-          <table>
+          <table class="desktop-table">
             <thead><tr><th>#</th><th>Cliente</th><th>Proveedor</th><th>MT</th><th>USD/MT</th><th>Estado</th><th>ETD</th><th>BL</th><th></th></tr></thead>
             <tbody id="ordersBody"></tbody>
           </table>
+          <div class="mobile-cards" id="ordersMobile"></div>
         </div>
       </div>
 
@@ -844,44 +877,22 @@ const SCOPES = 'openid profile email User.Read Mail.Send';
 const st = {
   user: null, token: null, editingId: null, currentFile: null,
   icePrice: parseFloat(localStorage.getItem('co_ice') || '0'),
-  leads: [], suppliers: [], quotes: [], supplierQuotes: [], orders: [], priceHistory: []
+  leads: JSON.parse(localStorage.getItem('co_leads') || '[]'),
+  suppliers: JSON.parse(localStorage.getItem('co_suppliers') || '[]'),
+  quotes: JSON.parse(localStorage.getItem('co_quotes') || '[]'),
+  supplierQuotes: JSON.parse(localStorage.getItem('co_sq') || '[]'),
+  orders: JSON.parse(localStorage.getItem('co_orders') || '[]'),
+  priceHistory: JSON.parse(localStorage.getItem('co_ph') || '[]')
 };
 
 function save() {
-  // Data is saved directly to Cosmos DB via API
+  localStorage.setItem('co_leads', JSON.stringify(st.leads));
+  localStorage.setItem('co_suppliers', JSON.stringify(st.suppliers));
+  localStorage.setItem('co_quotes', JSON.stringify(st.quotes));
+  localStorage.setItem('co_sq', JSON.stringify(st.supplierQuotes));
+  localStorage.setItem('co_orders', JSON.stringify(st.orders));
+  localStorage.setItem('co_ph', JSON.stringify(st.priceHistory));
   localStorage.setItem('co_ice', st.icePrice);
-}
-
-async function dbGet(collection) {
-  try {
-    const res = await fetch(`${API_BASE}/data/${collection}`, {
-      headers: { Authorization: `Bearer ${st.token}` }
-    });
-    const data = await res.json();
-    return data.success ? data.data : [];
-  } catch(e) { return []; }
-}
-
-async function dbSave(collection, item) {
-  try {
-    item.id = item.id ? String(item.id) : String(Date.now());
-    const res = await fetch(`${API_BASE}/data/${collection}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${st.token}` },
-      body: JSON.stringify(item)
-    });
-    const data = await res.json();
-    return data.success ? data.data : null;
-  } catch(e) { return null; }
-}
-
-async function dbDelete(collection, id) {
-  try {
-    await fetch(`${API_BASE}/data/${collection}/${id}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${st.token}` }
-    });
-  } catch(e) {}
 }
 
 // ─── AUTH ─────────────────────────────────────────────────────────────────────
@@ -915,19 +926,12 @@ async function loadUser(token) {
   } catch(e) { console.error(e); }
 }
 
-async function showPortal() {
+function showPortal() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('portal').style.display = 'block';
   document.getElementById('userEmail').textContent = st.user.mail || st.user.userPrincipalName || '—';
   document.getElementById('userName').textContent = st.user.displayName || '';
   document.getElementById('dashDate').textContent = new Date().toLocaleDateString('es-ES', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  // Load all data from Cosmos DB
-  const [leads, suppliers, quotes, sq, orders, ph] = await Promise.all([
-    dbGet('leads'), dbGet('suppliers'), dbGet('quotes'),
-    dbGet('supplierQuotes'), dbGet('orders'), dbGet('priceHistory')
-  ]);
-  st.leads = leads; st.suppliers = suppliers; st.quotes = quotes;
-  st.supplierQuotes = sq; st.orders = orders; st.priceHistory = ph;
   fetchPrice();
   renderAll();
   setInterval(fetchPrice, 600000);
@@ -999,20 +1003,19 @@ function loadLivePrice() {
 }
 
 // ─── PRICE HISTORY ────────────────────────────────────────────────────────────
-async function recordPrice(manual) {
+function recordPrice(manual) {
   if (!st.icePrice) return;
   const today = new Date().toISOString().split('T')[0];
   if (!manual) {
     const alreadyToday = st.priceHistory.find(r => r.date === today && r.source === 'API');
     if (alreadyToday) return;
   }
-  const record = {
-    id: String(Date.now()), date: today,
+  st.priceHistory.unshift({
+    id: Date.now(), date: today,
     time: new Date().toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'}),
     price: st.icePrice, source: manual ? 'Manual' : 'API'
-  };
-  st.priceHistory.unshift(record);
-  await dbSave('priceHistory', record);
+  });
+  save();
   if (document.getElementById('page-mercado').classList.contains('active')) renderPriceHistory();
   addActivity('Precio ICE NY registrado: $' + st.icePrice.toLocaleString() + ' USD/MT');
 }
@@ -1049,11 +1052,9 @@ function renderPriceHistory() {
     </tr>`).join('') : '<tr><td colspan="4" class="empty">Sin registros.</td></tr>';
 }
 
-async function clearPriceHistory() {
+function clearPriceHistory() {
   if (!confirm('¿Eliminar todo el histórico de precios?')) return;
-  // Delete all price history - reload from DB after
-  for (const r of st.priceHistory) { await dbDelete('priceHistory', r.id); }
-  st.priceHistory = []; renderPriceHistory();
+  st.priceHistory = []; save(); renderPriceHistory();
 }
 
 // ─── QUOTER ───────────────────────────────────────────────────────────────────
@@ -1072,7 +1073,7 @@ function calcQuote() {
   document.getElementById('r-profit').textContent = (margin && vol) ? `$${(margin*vol).toLocaleString()} USD` : '—';
 }
 
-async function saveQuote() {
+function saveQuote() {
   const ice = parseFloat(document.getElementById('qIce').value);
   const vol = parseFloat(document.getElementById('qVol').value);
   if (!ice || !vol) { alert('Ingresa precio ICE y volumen'); return; }
@@ -1089,9 +1090,7 @@ async function saveQuote() {
     incoterm: document.getElementById('qInco').value,
     notes: document.getElementById('qNotes').value, status: 'Borrador'
   };
-  await dbSave('quotes', q);
-  const quotes = await dbGet('quotes'); st.quotes = quotes;
-  renderQuotes();
+  st.quotes.unshift(q); save(); renderQuotes();
   addActivity(`Cotización guardada — $${sell.toFixed(0)}/MT × ${vol} MT`);
   alert('✅ Cotización guardada');
 }
@@ -1127,7 +1126,7 @@ async function sendEmail() {
 }
 
 // ─── LEADS ────────────────────────────────────────────────────────────────────
-async function saveLead() {
+function saveLead() {
   const company = document.getElementById('lCompany').value.trim();
   if (!company) { alert('Ingresa el nombre de la empresa'); return; }
   const lead = {
@@ -1148,29 +1147,43 @@ async function saveLead() {
   } else {
     st.leads.unshift(lead);
   }
-  st.editingId = null;
-  await dbSave('leads', lead);
-  const leads = await dbGet('leads'); st.leads = leads;
-  renderLeads(); populateClientSelects();
+  st.editingId = null; save(); renderLeads(); populateClientSelects();
   updateKPIs(); addActivity(`Lead: ${company}`); closeModal('modalLead');
 }
 
 function renderLeads() {
   const tbody = document.getElementById('leadsBody');
-  const statusClass = {Prospecto:'b-prospecto',Contactado:'b-contactado',Cotizado:'b-cotizado',Negociación:'b-negociacion',Cerrado:'b-cerrado',Perdido:'b-perdido'};
-  tbody.innerHTML = st.leads.length ? st.leads.map(l => `
-    <tr>
-      <td><strong>${l.company}</strong></td>
-      <td>${l.contact||'—'}</td>
-      <td>${l.country||'—'}</td>
-      <td>${l.volume?l.volume+' MT':'—'}</td>
-      <td><span class="badge ${statusClass[l.status]||'b-prospecto'}">${l.status}</span></td>
-      <td>${l.date||'—'}</td>
-      <td style="display:flex;gap:6px;">
-        <button class="btn btn-outline btn-sm" onclick="editLead(${l.id})">Editar</button>
-        <button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="deleteLead(${l.id})">✕</button>
-      </td>
-    </tr>`).join('') : '<tr><td colspan="7" class="empty">No hay leads. Añade el primero.</td></tr>';
+  const mCards = document.getElementById('leadsMobile');
+  const statusClass = {Prospecto:'b-prospecto',Contactado:'b-contactado',Cotizado:'b-cotizado','Negociación':'b-negociacion',Cerrado:'b-cerrado',Perdido:'b-perdido'};
+  if (!st.leads.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">No hay leads. Añade el primero.</td></tr>';
+    if(mCards) mCards.innerHTML = '<div class="empty">No hay leads. Añade el primero.</div>';
+  } else {
+    tbody.innerHTML = st.leads.map(l => `
+      <tr>
+        <td><strong>${l.company}</strong></td>
+        <td>${l.contact||'—'}</td>
+        <td>${l.country||'—'}</td>
+        <td>${l.volume?l.volume+' MT':'—'}</td>
+        <td><span class="badge ${statusClass[l.status]||'b-prospecto'}">${l.status}</span></td>
+        <td>${l.date||'—'}</td>
+        <td style="display:flex;gap:6px;">
+          <button class="btn btn-outline btn-sm" onclick="editLead(${l.id})">Editar</button>
+          <button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="deleteLead(${l.id})">✕</button>
+        </td>
+      </tr>`).join('');
+    if(mCards) mCards.innerHTML = st.leads.map(l => `
+      <div class="m-card" style="border-left-color:var(--accent)">
+        <div class="m-card-title">${l.company} <span class="badge ${statusClass[l.status]||'b-prospecto'}" style="float:right">${l.status}</span></div>
+        <div class="m-card-row"><span class="m-card-label">Contacto</span><span class="m-card-val">${l.contact||'—'}</span></div>
+        <div class="m-card-row"><span class="m-card-label">País</span><span class="m-card-val">${l.country||'—'}</span></div>
+        <div class="m-card-row"><span class="m-card-label">Volumen</span><span class="m-card-val">${l.volume?l.volume+' MT':'—'}</span></div>
+        <div class="m-card-actions">
+          <button class="btn btn-outline btn-sm" onclick="editLead(${l.id})">Editar</button>
+          <button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="deleteLead(${l.id})">Eliminar</button>
+        </div>
+      </div>`).join('');
+  }
   renderPipeline();
 }
 
@@ -1186,11 +1199,10 @@ function editLead(id) {
   openModal('modalLead');
 }
 
-async function deleteLead(id) {
+function deleteLead(id) {
   if (!confirm('¿Eliminar este lead?')) return;
-  await dbDelete('leads', id);
   st.leads = st.leads.filter(l => l.id !== id);
-  renderLeads(); updateKPIs();
+  save(); renderLeads(); updateKPIs();
 }
 
 function filterLeads(q) {
@@ -1222,7 +1234,7 @@ function renderPipeline() {
 }
 
 // ─── SUPPLIERS ────────────────────────────────────────────────────────────────
-async function saveSupplier() {
+function saveSupplier() {
   const company = document.getElementById('pCompany').value.trim();
   if (!company) { alert('Ingresa nombre de empresa'); return; }
   const s = {
@@ -1236,31 +1248,45 @@ async function saveSupplier() {
     status: document.getElementById('pStatus').value,
     notes: document.getElementById('pNotes').value
   };
-  await dbSave('suppliers', s);
-  const suppliers = await dbGet('suppliers'); st.suppliers = suppliers;
-  renderSuppliers(); updateKPIs();
+  st.suppliers.unshift(s); save(); renderSuppliers(); updateKPIs();
   addActivity(`Proveedor: ${company}`); closeModal('modalSupplier');
 }
 
 function renderSuppliers() {
   const tbody = document.getElementById('suppliersBody');
-  tbody.innerHTML = st.suppliers.length ? st.suppliers.map(s => `
-    <tr>
-      <td><strong>${s.company}</strong></td>
-      <td>${s.country||'—'}</td>
-      <td>${s.contact||'—'}<br><small style="color:var(--mid)">${s.email||''}</small></td>
-      <td>${s.price?'$'+s.price+' USD/MT':'—'}</td>
-      <td>${s.differential||'—'}</td>
-      <td><span class="badge ${s.status==='Activo'?'b-activo':'b-inactivo'}">${s.status}</span></td>
-      <td><button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="deleteSupplier(${s.id})">✕</button></td>
-    </tr>`).join('') : '<tr><td colspan="7" class="empty">No hay proveedores.</td></tr>';
+  const mCards = document.getElementById('suppliersMobile');
+  if (!st.suppliers.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">No hay proveedores.</td></tr>';
+    if(mCards) mCards.innerHTML = '<div class="empty">No hay proveedores.</div>';
+  } else {
+    tbody.innerHTML = st.suppliers.map(s => `
+      <tr>
+        <td><strong>${s.company}</strong></td>
+        <td>${s.country||'—'}</td>
+        <td>${s.contact||'—'}<br><small style="color:var(--mid)">${s.email||''}</small></td>
+        <td>${s.price?'$'+s.price+' USD/MT':'—'}</td>
+        <td>${s.differential||'—'}</td>
+        <td><span class="badge ${s.status==='Activo'?'b-activo':'b-inactivo'}">${s.status}</span></td>
+        <td><button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="deleteSupplier(${s.id})">✕</button></td>
+      </tr>`).join('');
+    if(mCards) mCards.innerHTML = st.suppliers.map(s => `
+      <div class="m-card">
+        <div class="m-card-title">${s.company} <span class="badge ${s.status==='Activo'?'b-activo':'b-inactivo'}" style="float:right">${s.status}</span></div>
+        <div class="m-card-row"><span class="m-card-label">País</span><span class="m-card-val">${s.country||'—'}</span></div>
+        <div class="m-card-row"><span class="m-card-label">Contacto</span><span class="m-card-val">${s.contact||'—'}</span></div>
+        <div class="m-card-row"><span class="m-card-label">Precio FOB</span><span class="m-card-val">${s.price?'$'+s.price+' USD/MT':'—'}</span></div>
+        <div class="m-card-row"><span class="m-card-label">Diferencial</span><span class="m-card-val">${s.differential||'—'}</span></div>
+        <div class="m-card-actions">
+          <button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="deleteSupplier(${s.id})">Eliminar</button>
+        </div>
+      </div>`).join('');
+  }
 }
 
-async function deleteSupplier(id) {
+function deleteSupplier(id) {
   if (!confirm('¿Eliminar proveedor?')) return;
-  await dbDelete('suppliers', id);
   st.suppliers = st.suppliers.filter(s => s.id !== id);
-  renderSuppliers(); updateKPIs();
+  save(); renderSuppliers(); updateKPIs();
 }
 
 function populateSupplierSelects() {
@@ -1275,7 +1301,7 @@ function handleFile(input) {
   }
 }
 
-async function saveSupplierQuote() {
+function saveSupplierQuote() {
   const suppEl = document.getElementById('sqSupplier');
   const supp = st.suppliers.find(s => s.id == suppEl.value);
   const sq = {
@@ -1288,8 +1314,7 @@ async function saveSupplierQuote() {
     validUntil: document.getElementById('sqValid').value,
     fileName: st.currentFile ? st.currentFile.name : null
   };
-  await dbSave('supplierQuotes', sq); st.currentFile = null;
-  const sqs = await dbGet('supplierQuotes'); st.supplierQuotes = sqs;
+  st.supplierQuotes.unshift(sq); st.currentFile = null; save();
   renderSupplierQuotes(); renderSupplierQuotes2();
   addActivity(`Cotización proveedor: ${sq.supplierName}`); closeModal('modalSupplierQuote');
 }
@@ -1337,7 +1362,7 @@ function resendQuote(id) {
 }
 
 // ─── ORDERS ───────────────────────────────────────────────────────────────────
-async function saveOrder() {
+function saveOrder() {
   const cl = document.getElementById('ordClient');
   const sp = document.getElementById('ordSupplier');
   const order = {
@@ -1352,33 +1377,52 @@ async function saveOrder() {
     bl: document.getElementById('ordBL').value,
     notes: document.getElementById('ordNotes').value
   };
-  await dbSave('orders', order);
-  const orders = await dbGet('orders'); st.orders = orders;
-  renderOrders(); updateKPIs();
+  st.orders.unshift(order); save(); renderOrders(); updateKPIs();
   addActivity(`Pedido: ${order.client} ${order.volume} MT`); closeModal('modalOrder');
 }
 
 function renderOrders() {
   const statusClass = {'Confirmado':'b-cotizado','En producción':'b-contactado','Listo para embarque':'b-negociacion','Embarcado':'b-cerrado','En tránsito':'b-cerrado','Entregado':'b-activo'};
   const tbody = document.getElementById('ordersBody');
-  tbody.innerHTML = st.orders.length ? st.orders.map((o,i) => `
-    <tr>
-      <td>#${String(i+1).padStart(3,'0')}</td>
-      <td>${o.client}</td><td>${o.supplier}</td>
-      <td>${o.volume} MT</td><td>${o.price?'$'+o.price:'—'}</td>
-      <td><span class="badge ${statusClass[o.status]||'b-cotizado'}">${o.status}</span></td>
-      <td>${o.etd||'—'}</td><td>${o.bl||'—'}</td>
-      <td>
-        <select onchange="updateOrder(${o.id},this.value)" style="font-size:11px;padding:4px;border:0.5px solid var(--border);font-family:'Jost',sans-serif;">
-          ${['Confirmado','En producción','Listo para embarque','Embarcado','En tránsito','Entregado'].map(s => `<option${s===o.status?' selected':''}>${s}</option>`).join('')}
-        </select>
-      </td>
-    </tr>`).join('') : '<tr><td colspan="9" class="empty">No hay pedidos.</td></tr>';
+  const mCards = document.getElementById('ordersMobile');
+  const statuses = ['Confirmado','En producción','Listo para embarque','Embarcado','En tránsito','Entregado'];
+  if (!st.orders.length) {
+    tbody.innerHTML = '<tr><td colspan="9" class="empty">No hay pedidos.</td></tr>';
+    if(mCards) mCards.innerHTML = '<div class="empty">No hay pedidos.</div>';
+  } else {
+    tbody.innerHTML = st.orders.map((o,i) => `
+      <tr>
+        <td>#${String(i+1).padStart(3,'0')}</td>
+        <td>${o.client}</td><td>${o.supplier}</td>
+        <td>${o.volume} MT</td><td>${o.price?'$'+o.price:'—'}</td>
+        <td><span class="badge ${statusClass[o.status]||'b-cotizado'}">${o.status}</span></td>
+        <td>${o.etd||'—'}</td><td>${o.bl||'—'}</td>
+        <td>
+          <select onchange="updateOrder(${o.id},this.value)" style="font-size:11px;padding:4px;border:0.5px solid var(--border);font-family:'Jost',sans-serif;">
+            ${statuses.map(s => `<option${s===o.status?' selected':''}>${s}</option>`).join('')}
+          </select>
+        </td>
+      </tr>`).join('');
+    if(mCards) mCards.innerHTML = st.orders.map((o,i) => `
+      <div class="m-card">
+        <div class="m-card-title">#${String(i+1).padStart(3,'0')} — ${o.client} <span class="badge ${statusClass[o.status]||'b-cotizado'}" style="float:right">${o.status}</span></div>
+        <div class="m-card-row"><span class="m-card-label">Proveedor</span><span class="m-card-val">${o.supplier}</span></div>
+        <div class="m-card-row"><span class="m-card-label">Volumen</span><span class="m-card-val">${o.volume} MT</span></div>
+        <div class="m-card-row"><span class="m-card-label">Precio</span><span class="m-card-val">${o.price?'$'+o.price+' USD/MT':'—'}</span></div>
+        <div class="m-card-row"><span class="m-card-label">ETD</span><span class="m-card-val">${o.etd||'—'}</span></div>
+        <div class="m-card-row"><span class="m-card-label">BL</span><span class="m-card-val">${o.bl||'—'}</span></div>
+        <div style="margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border);">
+          <select onchange="updateOrder(${o.id},this.value)" style="width:100%;padding:8px;border:0.5px solid var(--border);font-family:'Jost',sans-serif;font-size:12px;">
+            ${statuses.map(s => `<option${s===o.status?' selected':''}>${s}</option>`).join('')}
+          </select>
+        </div>
+      </div>`).join('');
+  }
 }
 
-async function updateOrder(id, status) {
+function updateOrder(id, status) {
   const o = st.orders.find(x => x.id === id);
-  if (o) { o.status = status; await dbSave('orders', o); renderOrders(); addActivity(`Pedido actualizado: ${o.client} → ${status}`); }
+  if (o) { o.status = status; save(); renderOrders(); addActivity(`Pedido actualizado: ${o.client} → ${status}`); }
 }
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
