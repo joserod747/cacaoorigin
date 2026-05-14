@@ -542,20 +542,22 @@
         </div>
         <div class="section">
           <div class="section-header"><span class="section-title">Promedios mensuales</span></div>
-          <table>
+          <table class="desktop-table">
             <thead><tr><th>Mes</th><th>Promedio</th><th>Mínimo</th><th>Máximo</th><th>Registros</th></tr></thead>
             <tbody id="monthlyAvgBody"></tbody>
           </table>
+          <div class="mobile-cards" id="monthlyAvgMobile"></div>
         </div>
         <div class="section">
           <div class="section-header">
             <span class="section-title">Histórico completo</span>
             <button class="btn btn-outline btn-sm btn-red" onclick="clearPriceHistory()">Limpiar histórico</button>
           </div>
-          <table>
+          <table class="desktop-table">
             <thead><tr><th>Fecha</th><th>Hora</th><th>Precio ICE NY</th><th>Fuente</th></tr></thead>
             <tbody id="priceHistoryBody"></tbody>
           </table>
+          <div class="mobile-cards" id="priceHistoryMobile"></div>
         </div>
       </div>
 
@@ -884,7 +886,7 @@ const st = {
   quotes: JSON.parse(localStorage.getItem('co_quotes') || '[]'),
   supplierQuotes: JSON.parse(localStorage.getItem('co_sq') || '[]'),
   orders: JSON.parse(localStorage.getItem('co_orders') || '[]'),
-  priceHistory: JSON.parse(localStorage.getItem('co_ph') || '[]')
+  priceHistory: []
 };
 
 function save() {
@@ -978,7 +980,7 @@ async function fetchPrice() {
       st.icePrice = data.price;
       save();
       updateTicker(data.price);
-      recordPrice(false);
+      await recordPrice(false);
     }
   } catch(e) { updateTicker(st.icePrice); }
 }
@@ -993,9 +995,9 @@ function updateTicker(price) {
     document.getElementById('mCurrentPrice').textContent = '$' + fmt;
 }
 
-function setManualPrice() {
+async function setManualPrice() {
   const val = parseFloat(document.getElementById('manualPriceInput').value);
-  if (val > 0) { st.icePrice = val; save(); updateTicker(val); recordPrice(true); }
+  if (val > 0) { st.icePrice = val; save(); updateTicker(val); await recordPrice(true); }
   closeModal('modalPrice');
 }
 
@@ -1052,6 +1054,17 @@ function renderPriceHistory() {
       <td><strong>$${r.price.toLocaleString()} USD/MT</strong></td>
       <td><span class="badge ${r.source==='API'?'b-api':'b-manual'}">${r.source}</span></td>
     </tr>`).join('') : '<tr><td colspan="4" class="empty">Sin registros.</td></tr>';
+
+  // Mobile price history cards
+  const mCards = document.getElementById('priceHistoryMobile');
+  if (mCards) {
+    mCards.innerHTML = h.length ? h.map(r => `
+      <div class="m-card">
+        <div class="m-card-title">$${r.price.toLocaleString()} USD/MT <span class="badge ${r.source==='API'?'b-api':'b-manual'}" style="float:right">${r.source}</span></div>
+        <div class="m-card-row"><span class="m-card-label">Fecha</span><span class="m-card-val">${r.date}</span></div>
+        <div class="m-card-row"><span class="m-card-label">Hora</span><span class="m-card-val">${r.time}</span></div>
+      </div>`).join('') : '<div class="empty">Sin registros.</div>';
+  }
 }
 
 async function clearPriceHistory() {
